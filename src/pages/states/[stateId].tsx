@@ -10,6 +10,14 @@ interface RecordData {
   district_name: string;
 }
 
+interface ApiRecord {
+  crop: string;
+  season: string;
+  crop_year: number;
+  district_name: string;
+  // Other API fields can be added if needed
+}
+
 export default function StateDetailPage() {
   const router = useRouter();
   const [stateData, setStateData] = useState<RecordData[]>([]);
@@ -51,7 +59,7 @@ export default function StateDetailPage() {
       })
       .then((data) => {
         console.log("API Data:", data);
-        const records = data.records.map((record: any) => ({
+        const records = data.records.map((record: ApiRecord) => ({
           crop: record.crop,
           season: record.season,
           crop_year: record.crop_year,
@@ -85,7 +93,7 @@ export default function StateDetailPage() {
       {stateData.length ? (
         <table className="table-auto w-full border border-gray-200 mt-4">
           <thead>
-            <tr className="bg-black-100">
+            <tr className="text-black bg-gray-100">
               <th className="px-4 py-2 border">Crop</th>
               <th className="px-4 py-2 border">Season</th>
               <th className="px-4 py-2 border">Year</th>
