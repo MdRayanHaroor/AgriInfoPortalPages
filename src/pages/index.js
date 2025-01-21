@@ -4,13 +4,13 @@ import {
   Geographies,
   Geography,
   ZoomableGroup,
+  Annotation,
 } from "react-simple-maps"
 
 export default function Home() {
   const [mapData, setMapData] = useState(null)
 
   useEffect(() => {
-    console.log("Fetching map data from /india-states-topo.json")
     fetch("/india-states-topo.json")
       .then((res) => {
         if (!res.ok) {
@@ -19,7 +19,6 @@ export default function Home() {
         return res.json()
       })
       .then((data) => {
-        console.log("Map data loaded successfully:", data)
         setMapData(data)
       })
       .catch((err) => console.error("Error loading map data:", err))
@@ -42,24 +41,50 @@ export default function Home() {
                 <Geographies geography={mapData}>
                   {({ geographies }) =>
                     geographies.map((geo) => (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        style={{
-                          default: {
-                            fill: "#E0E0E0",
-                            outline: "none",
-                          },
-                          hover: {
-                            fill: "#CCCCCC",
-                            outline: "none",
-                          },
-                          pressed: {
-                            fill: "#AAAAAA",
-                            outline: "none",
-                          },
-                        }}
-                      />
+                      <g key={geo.rsmKey}>
+                        {/* Render the state shapes */}
+                        <Geography
+                          geography={geo}
+                          style={{
+                            default: {
+                              fill: "#E0E0E0",
+                              outline: "none",
+                            },
+                            hover: {
+                              fill: "#CCCCCC",
+                              outline: "none",
+                            },
+                            pressed: {
+                              fill: "#AAAAAA",
+                              outline: "none",
+                            },
+                          }}
+                        />
+
+                        {/* Render the state names */}
+                        <Annotation
+                          subject={geo.properties.centroid || [0, 0]} // Use centroids or calculate manually
+                          dx={0}
+                          dy={0}
+                          connectorProps={{
+                            stroke: "none",
+                            strokeWidth: 1,
+                            strokeLinecap: "round",
+                          }}
+                        >
+                          <text
+                            x="0"
+                            y="0"
+                            textAnchor="middle"
+                            alignmentBaseline="middle"
+                            fontSize="10"
+                            fill="#FFFFFF"
+                            style={{ pointerEvents: "none" }}
+                          >
+                            {geo.properties.name}
+                          </text>
+                        </Annotation>
+                      </g>
                     ))
                   }
                 </Geographies>

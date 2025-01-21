@@ -1,39 +1,40 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import {
   ComposableMap,
   Geographies,
   Geography,
   ZoomableGroup,
-} from "react-simple-maps"
-import { stateIdMapping } from "@/data/statesMap"
-import { FeatureCollection } from "geojson" // Import GeoJSON types
+} from "react-simple-maps";
+import { stateIdToTopoIdMapping } from "@/data/statesMap"; // Import the mapping for TopoJSON
+import { FeatureCollection } from "geojson"; // GeoJSON types
 
 interface StateMapProps {
-  stateId: string // Simplified state ID (e.g., "ap")
-  topoUrl: string // Path to the TopoJSON file
+  stateId: string; // Simplified state ID (e.g., "ap")
+  topoUrl: string; // Path to the TopoJSON file
 }
 
 export default function StateMap({ stateId, topoUrl }: StateMapProps) {
-  const [mapData, setMapData] = useState<FeatureCollection | null>(null) // Replace `any` with `FeatureCollection`
+  const [mapData, setMapData] = useState<FeatureCollection | null>(null);
 
-  const fullStateId = stateIdMapping[stateId]
+  // Get the TopoJSON ID for the given state
+  const fullStateId = stateIdToTopoIdMapping[stateId];
 
   useEffect(() => {
     fetch(topoUrl)
       .then((res) => {
         if (!res.ok) {
-          throw new Error(`Failed to load TopoJSON: ${res.status} ${res.statusText}`)
+          throw new Error(`Failed to load TopoJSON: ${res.status} ${res.statusText}`);
         }
-        return res.json()
+        return res.json();
       })
       .then((data) => setMapData(data))
-      .catch((err) => console.error("Error loading TopoJSON:", err))
-  }, [topoUrl])
+      .catch((err) => console.error("Error loading TopoJSON:", err));
+  }, [topoUrl]);
 
   if (!mapData) {
-    return <p>Loading map...</p>
+    return <p>Loading map...</p>;
   }
 
   return (
@@ -54,8 +55,8 @@ export default function StateMap({ stateId, topoUrl }: StateMapProps) {
           <Geographies geography={mapData}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                const geoId = geo.properties.id // Full ID from TopoJSON
-                const isSelected = geoId === fullStateId
+                const geoId = geo.properties.id; // TopoJSON ID
+                const isSelected = geoId === fullStateId; // Check if the current state is selected
 
                 return (
                   <Geography
@@ -76,12 +77,12 @@ export default function StateMap({ stateId, topoUrl }: StateMapProps) {
                       },
                     }}
                   />
-                )
+                );
               })
             }
           </Geographies>
         </ZoomableGroup>
       </ComposableMap>
     </div>
-  )
+  );
 }
