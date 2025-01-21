@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import {
   ComposableMap,
   Geographies,
@@ -9,7 +8,6 @@ import {
 
 export default function Home() {
   const [mapData, setMapData] = useState(null)
-  const [isMenuOpen, setIsMenuOpen] = useState(false) // State for hamburger menu
 
   useEffect(() => {
     console.log("Fetching map data from /india-states-topo.json")
@@ -29,8 +27,6 @@ export default function Home() {
 
   return (
     <>
-      
-
       <main className="p-6 max-w-6xl mx-auto">
         <h2 className="text-3xl font-bold text-center text-white mb-6">
           Explore Agriculture Data on the Map
@@ -74,14 +70,6 @@ export default function Home() {
           <p>Loading map...</p>
         )}
       </main>
-
-      {/* <footer className="bg-black text-white p-4 mt-12">
-        <div className="container mx-auto text-center">
-          <p className="text-sm">
-            &copy; {new Date().getFullYear()} AgriInfo Portal. All rights reserved.
-          </p>
-        </div>
-      </footer> */}
     </>
   )
 }
