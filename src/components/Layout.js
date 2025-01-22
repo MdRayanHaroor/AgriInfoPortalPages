@@ -54,6 +54,9 @@ export default function Layout({ children }) {
             <Link href="/about" className="hover:underline">
               About
             </Link>
+            <Link href="/contact" className="hover:underline">
+              Contact
+            </Link>
           </div>
         </div>
 
@@ -68,6 +71,9 @@ export default function Layout({ children }) {
             </Link>
             <Link href="/about" className="hover:underline">
               About
+            </Link>
+            <Link href="/contact" className="hover:underline">
+              Contact
             </Link>
           </div>
         )}

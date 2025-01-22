@@ -1,28 +1,36 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import {
   ComposableMap,
   Geographies,
   Geography,
   ZoomableGroup,
   Annotation,
-} from "react-simple-maps"
+} from "react-simple-maps";
+import { useRouter } from "next/router";
 
 export default function Home() {
-  const [mapData, setMapData] = useState(null)
+  const [mapData, setMapData] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/india-states-topo.json")
       .then((res) => {
         if (!res.ok) {
-          throw new Error(`Failed to fetch map data: ${res.status}`)
+          throw new Error(`Failed to fetch map data: ${res.status}`);
         }
-        return res.json()
+        return res.json();
       })
       .then((data) => {
-        setMapData(data)
+        setMapData(data);
       })
-      .catch((err) => console.error("Error loading map data:", err))
-  }, [])
+      .catch((err) => console.error("Error loading map data:", err));
+  }, []);
+
+  const handleStateClick = (geo) => {
+    const stateId = geo.properties.id; // Assuming `id` corresponds to the state ID (e.g., "INAP", "INTN")
+    const simplifiedStateId = stateId.slice(2).toLowerCase(); // Convert to simplified ID (e.g., "ap", "tn")
+    router.push(`/states/${simplifiedStateId}`);
+  };
 
   return (
     <>
@@ -45,10 +53,12 @@ export default function Home() {
                         {/* Render the state shapes */}
                         <Geography
                           geography={geo}
+                          onClick={() => handleStateClick(geo)} // Navigate to the state page on click
                           style={{
                             default: {
                               fill: "#E0E0E0",
                               outline: "none",
+                              cursor: "pointer",
                             },
                             hover: {
                               fill: "#CCCCCC",
@@ -96,5 +106,5 @@ export default function Home() {
         )}
       </main>
     </>
-  )
+  );
 }
