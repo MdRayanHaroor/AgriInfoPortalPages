@@ -9,7 +9,7 @@ export default function About() {
         up-to-date agricultural information for each state in India.
       </p>
       <p className="mb-4 text-lg">
-        This website provides two types of information about each state's
+        This website provides two types of information about each state&apos;s
         agriculture:
       </p>
       <ol className="list-decimal list-inside mb-4 text-lg">
