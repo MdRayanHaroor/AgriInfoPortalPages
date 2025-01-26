@@ -101,74 +101,80 @@ export default function StateDetailPage() {
       <h1 className="text-2xl font-bold mb-4">
         State: {router.query.stateId?.toString().toUpperCase()}
       </h1>
-      <StateMap
-        stateId={router.query.stateId?.toString() || ""}
-        topoUrl="/india-states-topo.json"
-      />
+      <div className="mb-6">
+        <StateMap
+          stateId={router.query.stateId?.toString() || ""}
+          topoUrl="/india-states-topo.json"
+        />
+      </div>
 
-<h2 className="text-xl font-bold mt-8">User Inputs</h2>
-      {userInputs.length ? (
-        <table className="table-auto w-full border border-gray-200 mt-4">
-          <thead>
-            <tr className="text-black bg-gray-100">
-              <th className="px-4 py-2 border">Name</th>
-              <th className="px-4 py-2 border">Email</th>
-              <th className="px-4 py-2 border">Phone</th>
-              <th className="px-4 py-2 border">District</th>
-              <th className="px-4 py-2 border">Village</th>
-              <th className="px-4 py-2 border">Fruit/Vegetable</th>
-              <th className="px-4 py-2 border">Variety</th>
-              <th className="px-4 py-2 border">Area (Acres)</th>
-              <th className="px-4 py-2 border">Sown Month</th>
-              <th className="px-4 py-2 border">Harvesting Month</th>
-            </tr>
-          </thead>
-          <tbody>
-            {userInputs.map((input: UserInputData, index: number) => (
-              <tr key={index}>
-                <td className="px-4 py-2 border">{input.name}</td>
-                <td className="px-4 py-2 border">{input.email}</td>
-                <td className="px-4 py-2 border">{input.phone}</td>
-                <td className="px-4 py-2 border">{input.district}</td>
-                <td className="px-4 py-2 border">{input.village}</td>
-                <td className="px-4 py-2 border">{input.fruitVegetable}</td>
-                <td className="px-4 py-2 border">{input.variety}</td>
-                <td className="px-4 py-2 border">{input.area}</td>
-                <td className="px-4 py-2 border">{input.sownMonth}</td>
-                <td className="px-4 py-2 border">{input.harvestingMonth}</td>
+      <h2 className="text-xl font-bold mt-8">User Inputs</h2>
+      <div className="overflow-x-auto">
+        {userInputs.length ? (
+          <table className="table-auto w-full border border-gray-200 mt-4 text-sm">
+            <thead>
+              <tr className="text-black bg-gray-100">
+                <th className="px-4 py-2 border">Name</th>
+                <th className="px-4 py-2 border">Email</th>
+                <th className="px-4 py-2 border">Phone</th>
+                <th className="px-4 py-2 border">District</th>
+                <th className="px-4 py-2 border">Village</th>
+                <th className="px-4 py-2 border">Fruit/Vegetable</th>
+                <th className="px-4 py-2 border">Variety</th>
+                <th className="px-4 py-2 border">Area (Acres)</th>
+                <th className="px-4 py-2 border">Sown Month</th>
+                <th className="px-4 py-2 border">Harvesting Month</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No user inputs available for the selected state.</p>
-      )}
+            </thead>
+            <tbody>
+              {userInputs.map((input: UserInputData, index: number) => (
+                <tr key={index}>
+                  <td className="px-4 py-2 border">{input.name}</td>
+                  <td className="px-4 py-2 border">{input.email}</td>
+                  <td className="px-4 py-2 border">{input.phone}</td>
+                  <td className="px-4 py-2 border">{input.district}</td>
+                  <td className="px-4 py-2 border">{input.village}</td>
+                  <td className="px-4 py-2 border">{input.fruitVegetable}</td>
+                  <td className="px-4 py-2 border">{input.variety}</td>
+                  <td className="px-4 py-2 border">{input.area}</td>
+                  <td className="px-4 py-2 border">{input.sownMonth}</td>
+                  <td className="px-4 py-2 border">{input.harvestingMonth}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No user inputs available for the selected state.</p>
+        )}
+      </div>
 
       <h2 className="text-xl font-bold mt-8">State Agriculture Data (data.gov.in)</h2>
-      {stateData.length ? (
-        <table className="table-auto w-full border border-gray-200 mt-4">
-          <thead>
-            <tr className="text-black bg-gray-100">
-              <th className="px-4 py-2 border">Crop</th>
-              <th className="px-4 py-2 border">Season</th>
-              <th className="px-4 py-2 border">Year</th>
-              <th className="px-4 py-2 border">District</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stateData.map((record: RecordData, index: number) => (
-              <tr key={index}>
-                <td className="px-4 py-2 border">{record.crop}</td>
-                <td className="px-4 py-2 border">{record.season}</td>
-                <td className="px-4 py-2 border">{record.crop_year}</td>
-                <td className="px-4 py-2 border">{record.district_name}</td>
+      <div className="overflow-x-auto">
+        {stateData.length ? (
+          <table className="table-auto w-full border border-gray-200 mt-4 text-sm">
+            <thead>
+              <tr className="text-black bg-gray-100">
+                <th className="px-4 py-2 border">Crop</th>
+                <th className="px-4 py-2 border">Season</th>
+                <th className="px-4 py-2 border">Year</th>
+                <th className="px-4 py-2 border">District</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No data available for the selected state.</p>
-      )}
+            </thead>
+            <tbody>
+              {stateData.map((record: RecordData, index: number) => (
+                <tr key={index}>
+                  <td className="px-4 py-2 border">{record.crop}</td>
+                  <td className="px-4 py-2 border">{record.season}</td>
+                  <td className="px-4 py-2 border">{record.crop_year}</td>
+                  <td className="px-4 py-2 border">{record.district_name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No data available for the selected state.</p>
+        )}
+      </div>
     </section>
   );
 }
