@@ -106,33 +106,7 @@ export default function StateDetailPage() {
         topoUrl="/india-states-topo.json"
       />
 
-      <h2 className="text-xl font-bold mt-8">State Agriculture Data (data.gov.in)</h2>
-      {stateData.length ? (
-        <table className="table-auto w-full border border-gray-200 mt-4">
-          <thead>
-            <tr className="text-black bg-gray-100">
-              <th className="px-4 py-2 border">Crop</th>
-              <th className="px-4 py-2 border">Season</th>
-              <th className="px-4 py-2 border">Year</th>
-              <th className="px-4 py-2 border">District</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stateData.map((record: RecordData, index: number) => (
-              <tr key={index}>
-                <td className="px-4 py-2 border">{record.crop}</td>
-                <td className="px-4 py-2 border">{record.season}</td>
-                <td className="px-4 py-2 border">{record.crop_year}</td>
-                <td className="px-4 py-2 border">{record.district_name}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No data available for the selected state.</p>
-      )}
-
-      <h2 className="text-xl font-bold mt-8">User Inputs</h2>
+<h2 className="text-xl font-bold mt-8">User Inputs</h2>
       {userInputs.length ? (
         <table className="table-auto w-full border border-gray-200 mt-4">
           <thead>
@@ -168,6 +142,32 @@ export default function StateDetailPage() {
         </table>
       ) : (
         <p>No user inputs available for the selected state.</p>
+      )}
+
+      <h2 className="text-xl font-bold mt-8">State Agriculture Data (data.gov.in)</h2>
+      {stateData.length ? (
+        <table className="table-auto w-full border border-gray-200 mt-4">
+          <thead>
+            <tr className="text-black bg-gray-100">
+              <th className="px-4 py-2 border">Crop</th>
+              <th className="px-4 py-2 border">Season</th>
+              <th className="px-4 py-2 border">Year</th>
+              <th className="px-4 py-2 border">District</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stateData.map((record: RecordData, index: number) => (
+              <tr key={index}>
+                <td className="px-4 py-2 border">{record.crop}</td>
+                <td className="px-4 py-2 border">{record.season}</td>
+                <td className="px-4 py-2 border">{record.crop_year}</td>
+                <td className="px-4 py-2 border">{record.district_name}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No data available for the selected state.</p>
       )}
     </section>
   );
