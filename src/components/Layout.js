@@ -1,8 +1,8 @@
-import Link from "next/link"
-import { useState } from "react"
+import Link from "next/link";
+import { useState } from "react";
 
 export default function Layout({ children }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false) // State for hamburger menu
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for hamburger menu
 
   return (
     <>
@@ -57,6 +57,9 @@ export default function Layout({ children }) {
             <Link href="/contact" className="hover:underline">
               Contact
             </Link>
+            <Link href="/user-input" className="hover:underline">
+              User Input
+            </Link>
           </div>
         </div>
 
@@ -75,6 +78,9 @@ export default function Layout({ children }) {
             <Link href="/contact" className="hover:underline">
               Contact
             </Link>
+            <Link href="/user-input" className="hover:underline">
+              User Input
+            </Link>
           </div>
         )}
       </nav>
@@ -89,5 +95,5 @@ export default function Layout({ children }) {
         </div>
       </footer>
     </>
-  )
+  );
 }
