@@ -1,6 +1,9 @@
 {
     "functions": {
-      "api/get-user-inputs": {
+      "src/pages/api/get-user-inputs.js": {
+        "maxDuration": 30
+      },
+      "src/pages/api/store-user-input.js": {
         "maxDuration": 30
       }
     }
