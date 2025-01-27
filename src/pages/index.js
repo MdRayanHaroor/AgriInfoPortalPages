@@ -35,6 +35,22 @@ export default function Home() {
   return (
     <>
       <main className="p-6 max-w-6xl mx-auto">
+        {/* Main Buttons */}
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-6">
+          <button
+            onClick={() => router.push("/states")}
+            className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
+          >
+            View All States
+          </button>
+          <button
+            onClick={() => router.push("/user-input")}
+            className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition"
+          >
+            Input Data
+          </button>
+        </div>
+
         <h2 className="text-3xl font-bold text-center text-white mb-6">
           Explore Agriculture Data on the Map
         </h2>

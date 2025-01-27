@@ -1,43 +1,4 @@
-import { useState } from "react";
-
-const stateToDistrictMapping = {
-  "Andhra Pradesh": ["Anantapur", "Chittoor", "Guntur", "Kadapa", "Kurnool"],
-  "Telangana": ["Adilabad", "Hyderabad", "Karimnagar", "Nizamabad", "Warangal"],
-  "Jammu and Kashmir": ["Srinagar", "Jammu", "Baramulla", "Anantnag", "Pulwama"],
-  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Aurangabad"],
-  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli"],
-  "Arunachal Pradesh": ["Itanagar", "Tawang", "Pasighat", "Ziro", "Bomdila"],
-  "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Tezpur"],
-  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia"],
-  "Chandigarh": ["Chandigarh"],
-  "Chhattisgarh": ["Raipur", "Bilaspur", "Durg", "Korba", "Ambikapur"],
-  "Dadra and Nagar Haveli and Daman and Diu": ["Silvassa", "Daman", "Diu"],
-  "Delhi": ["Central Delhi", "New Delhi", "South Delhi", "East Delhi", "West Delhi"],
-  "Goa": ["North Goa", "South Goa"],
-  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"],
-  "Haryana": ["Gurgaon", "Faridabad", "Panipat", "Rohtak", "Ambala"],
-  "Himachal Pradesh": ["Shimla", "Manali", "Dharamshala", "Kullu", "Mandi"],
-  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Deoghar"],
-  "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum"],
-  "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Kannur", "Kollam"],
-  "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"],
-  "Manipur": ["Imphal", "Bishnupur", "Thoubal", "Ukhrul", "Churachandpur"],
-  "Meghalaya": ["Shillong", "Tura", "Nongstoin", "Baghmara", "Jowai"],
-  "Mizoram": ["Aizawl", "Lunglei", "Champhai", "Serchhip", "Lawngtlai"],
-  "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Wokha", "Zunheboto"],
-  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Sambalpur", "Puri"],
-  "Puducherry": ["Pondicherry", "Karaikal", "Yanam", "Mahe"],
-  "Punjab": ["Amritsar", "Ludhiana", "Jalandhar", "Patiala", "Bathinda"],
-  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Ajmer"],
-  "Sikkim": ["Gangtok", "Namchi", "Mangan", "Gyalshing"],
-  "Tripura": ["Agartala", "Udaipur", "Kailashahar", "Dharmanagar", "Ambassa"],
-  "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Allahabad"],
-  "Uttarakhand": ["Dehradun", "Haridwar", "Nainital", "Rishikesh", "Haldwani"],
-  "West Bengal": ["Kolkata", "Darjeeling", "Siliguri", "Howrah", "Durgapur"],
-  "Lakshadweep": ["Kavaratti", "Agatti", "Minicoy", "Amini", "Andrott"],
-  "Ladakh": ["Leh", "Kargil"],
-  "Andaman and Nicobar Islands": ["Port Blair", "Diglipur", "Mayabunder", "Rangat", "Car Nicobar"],
-};
+import { useState, useEffect } from "react";
 
 export default function UserInput() {
   const [formData, setFormData] = useState({
@@ -54,15 +15,51 @@ export default function UserInput() {
     harvestingMonth: "",
   });
 
-  const [districts, setDistricts] = useState([]);
+  const [states, setStates] = useState([]); // For state dropdown
+  const [districts, setDistricts] = useState([]); // For district dropdown
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    // Fetch state and district data from the API
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=579b464db66ec23bdd000001cdc3b564546246a772a26393094f5645&offset=0&limit=all&format=json"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch data from the API");
+        }
+        const data = await response.json();
+
+        // Extract and sort unique state names
+        const stateSet = new Set(
+          data.records.map((record) => record.state_name_english)
+        );
+        const sortedStates = [...stateSet].sort(); // Sort alphabetically
+        setStates(sortedStates);
+
+        // Prepopulate districts for the selected state
+        if (formData.state) {
+          const filteredDistricts = data.records
+            .filter(
+              (record) => record.state_name_english === formData.state
+            )
+            .map((record) => record.district_name_english)
+            .sort(); // Sort districts alphabetically
+          setDistricts(filteredDistricts);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, [formData.state]); // Refetch districts when state changes
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     if (name === "state") {
-      const availableDistricts = stateToDistrictMapping[value] || [];
-      setDistricts(availableDistricts);
       setFormData((prev) => ({ ...prev, state: value, district: "" }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -150,6 +147,7 @@ export default function UserInput() {
           />
         </div>
 
+        {/* State Dropdown */}
         <div>
           <label className="block font-medium mb-2">State*</label>
           <select
@@ -160,14 +158,15 @@ export default function UserInput() {
             className="border px-4 py-2 rounded w-full text-black"
           >
             <option value="">Select State</option>
-            {Object.keys(stateToDistrictMapping).map((state) => (
-              <option key={state} value={state}>
+            {states.map((state, index) => (
+              <option key={index} value={state}>
                 {state}
               </option>
             ))}
           </select>
         </div>
 
+        {/* District Dropdown */}
         <div>
           <label className="block font-medium mb-2">District*</label>
           <select
@@ -179,8 +178,8 @@ export default function UserInput() {
             disabled={!formData.state}
           >
             <option value="">Select District</option>
-            {districts.map((district) => (
-              <option key={district} value={district}>
+            {districts.map((district, index) => (
+              <option key={index} value={district}>
                 {district}
               </option>
             ))}

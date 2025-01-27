@@ -8,6 +8,9 @@ interface RecordData {
   season: string;
   crop_year: number;
   district_name: string;
+  state_name: string;
+  area: string;
+  production_ : string, // Use string because API might return "NA"
 }
 
 interface UserInputData {
@@ -30,6 +33,7 @@ export default function StateDetailPage() {
   const [userInputs, setUserInputs] = useState<UserInputData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc"); // Sorting state
 
   useEffect(() => {
     const fetchStateData = async () => {
@@ -52,22 +56,34 @@ export default function StateDetailPage() {
       try {
         setLoading(true);
 
-        // Fetch data from data.gov.in API
-        const apiKey = "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b";
+        // Correct API URL with limit parameter
+        const apiKey = "579b464db66ec23bdd00000198902acca33045767c8a79dfc3f0ce11";
         const apiUrl = `https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de?api-key=${apiKey}&format=json&filters[state_name]=${encodeURIComponent(
           stateName
-        )}`;
+        )}&limit=50`;
+
+        console.log("Fetching API URL:", apiUrl);
+
         const apiResponse = await fetch(apiUrl);
         if (!apiResponse.ok) {
           throw new Error(`Failed to fetch API data: ${apiResponse.status}`);
         }
         const apiData = await apiResponse.json();
-        const apiRecords = apiData.records.map((record: RecordData) => ({
-          crop: record.crop,
-          season: record.season,
-          crop_year: record.crop_year,
-          district_name: record.district_name,
-        }));
+        console.log("API Data Records:", apiData.records);
+
+        // Process and sort records by crop_year (descending)
+        const apiRecords = apiData.records
+  .map((record: Record<string, string | number | null>) => ({
+    crop: record["crop"] as string,
+    season: record["season"] as string,
+    crop_year: record["crop_year"] as number,
+    district_name: record["district_name"] as string,
+    state_name: (record["state_name"] as string) || "N/A", // Fallback for missing state_name
+    area: (record["area_"] as string) || "NA",
+    production_: (record["production_"] as string) || "NA", // Add production field
+  }))
+  .sort((a: { crop_year: number; }, b: { crop_year: number; }) => b.crop_year - a.crop_year);
+
         setStateData(apiRecords);
 
         // Fetch user inputs from MongoDB Atlas
@@ -92,6 +108,18 @@ export default function StateDetailPage() {
 
     fetchStateData();
   }, [router.query.stateId]);
+
+  const handleSort = () => {
+    const sortedData = [...stateData].sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.crop_year - b.crop_year;
+      } else {
+        return b.crop_year - a.crop_year;
+      }
+    });
+    setStateData(sortedData);
+    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  };
 
   if (loading) return <p>Loading data...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -156,8 +184,19 @@ export default function StateDetailPage() {
               <tr className="text-black bg-gray-100">
                 <th className="px-4 py-2 border">Crop</th>
                 <th className="px-4 py-2 border">Season</th>
-                <th className="px-4 py-2 border">Year</th>
+                <th className="px-4 py-2 border">
+                  Year
+                  <button
+                    onClick={handleSort}
+                    className="ml-2 text-blue-500 underline"
+                  >
+                    Sort
+                  </button>
+                </th>
                 <th className="px-4 py-2 border">District</th>
+                <th className="px-4 py-2 border">State</th>
+                <th className="px-4 py-2 border">Area (acres)</th>
+                <th className="px-4 py-2 border">Production (tonnes)</th>
               </tr>
             </thead>
             <tbody>
@@ -167,6 +206,9 @@ export default function StateDetailPage() {
                   <td className="px-4 py-2 border">{record.season}</td>
                   <td className="px-4 py-2 border">{record.crop_year}</td>
                   <td className="px-4 py-2 border">{record.district_name}</td>
+                  <td className="px-4 py-2 border">{record.state_name}</td>
+                  <td className="px-4 py-2 border">{record.area}</td>
+                  <td className="px-4 py-2 border">{record.production_}</td>
                 </tr>
               ))}
             </tbody>
