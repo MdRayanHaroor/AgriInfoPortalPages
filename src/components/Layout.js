@@ -58,7 +58,7 @@ export default function Layout({ children }) {
               Contact
             </Link>
             <Link href="/user-input" className="hover:underline">
-              User Input
+              Input Data
             </Link>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function Layout({ children }) {
               Contact
             </Link>
             <Link href="/user-input" className="hover:underline">
-              User Input
+              Input Data
             </Link>
           </div>
         )}
