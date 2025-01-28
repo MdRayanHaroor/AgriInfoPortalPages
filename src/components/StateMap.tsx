@@ -66,10 +66,14 @@ export default function StateMap({ stateId, topoUrl }: StateMapProps) {
                       default: {
                         fill: isSelected ? "#FF0000" : "#E0E0E0",
                         outline: "none",
+                        stroke: "#000000", // Explicit border color
+                        strokeWidth: 0.5,
                       },
                       hover: {
                         fill: isSelected ? "#FF4F4F" : "#CCC",
                         outline: "none",
+                        stroke: "#000000", // Explicit border color
+                        strokeWidth: 0.5,
                       },
                       pressed: {
                         fill: "#CCC",

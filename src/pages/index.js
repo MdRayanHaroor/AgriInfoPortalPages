@@ -55,7 +55,7 @@ export default function Home() {
           Explore Agriculture Data on the Map
         </h2>
         {mapData ? (
-          <div className="w-full h-[600px] border bg-black">
+          <div className="w-full h-[50vh] min-h-[300px] border bg-black">
             <ComposableMap
               projection="geoMercator"
               projectionConfig={{ scale: 1000 }}
@@ -75,10 +75,14 @@ export default function Home() {
                               fill: "#E0E0E0",
                               outline: "none",
                               cursor: "pointer",
+                              stroke: "#000000", // Explicit border color
+                              strokeWidth: 0.5,
                             },
                             hover: {
                               fill: "#CCCCCC",
                               outline: "none",
+                              stroke: "#000000", // Maintain border on hover
+                              strokeWidth: 0.5,
                             },
                             pressed: {
                               fill: "#AAAAAA",
