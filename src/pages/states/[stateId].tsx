@@ -10,7 +10,7 @@ interface RecordData {
   district_name: string;
   state_name: string;
   area: string;
-  production_ : string, // Use string because API might return "NA"
+  production_: string;
 }
 
 interface UserInputData {
@@ -31,9 +31,11 @@ export default function StateDetailPage() {
   const router = useRouter();
   const [stateData, setStateData] = useState<RecordData[]>([]);
   const [userInputs, setUserInputs] = useState<UserInputData[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc"); // Sorting state
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     const fetchStateData = async () => {
@@ -46,7 +48,7 @@ export default function StateDetailPage() {
         return;
       }
 
-      const stateName = stateIdToStateNameMapping[stateId]; // For API queries
+      const stateName = stateIdToStateNameMapping[stateId];
       if (!stateName) {
         setError("Invalid state ID");
         setLoading(false);
@@ -55,42 +57,66 @@ export default function StateDetailPage() {
 
       try {
         setLoading(true);
+        setError(null);
 
-        // Correct API URL with limit parameter
+        // Fetch districts
+        const districtResponse = await fetch(
+          "https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=579b464db66ec23bdd000001cdc3b564546246a772a26393094f5645&offset=0&limit=all&format=json"
+        );
+        if (!districtResponse.ok) throw new Error("Failed to fetch district data");
+        
+        const districtData = await districtResponse.json();
+        const filteredDistricts = districtData.records
+          .filter((record: { state_name_english: string }) => record.state_name_english === stateName)
+          .map((record: { district_name_english: string }) => record.district_name_english)
+          .sort();
+        
+        setDistricts(filteredDistricts);
+
+        // Fetch agriculture data with proper sorting and filtering
         const apiKey = "579b464db66ec23bdd00000198902acca33045767c8a79dfc3f0ce11";
-        const apiUrl = `https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de?api-key=${apiKey}&format=json&filters[state_name]=${encodeURIComponent(
-          stateName
-        )}&limit=50`;
-
-        console.log("Fetching API URL:", apiUrl);
-
-        const apiResponse = await fetch(apiUrl);
-        if (!apiResponse.ok) {
-          throw new Error(`Failed to fetch API data: ${apiResponse.status}`);
+        const apiUrl = new URL("https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de");
+        apiUrl.searchParams.set("api-key", apiKey);
+        apiUrl.searchParams.set("format", "json");
+        apiUrl.searchParams.set("filters[state_name]", stateName);
+        apiUrl.searchParams.set("sort[crop_year]", "desc"); // Server-side sorting
+        
+        if (selectedDistrict) {
+          apiUrl.searchParams.set("filters[district_name]", selectedDistrict.toUpperCase());
         }
-        const apiData = await apiResponse.json();
-        console.log("API Data Records:", apiData.records);
+        
+        apiUrl.searchParams.set("limit", "50");
 
-        // Process and sort records by crop_year (descending)
-        const apiRecords = apiData.records
-  .map((record: Record<string, string | number | null>) => ({
-    crop: record["crop"] as string,
-    season: record["season"] as string,
-    crop_year: record["crop_year"] as number,
-    district_name: record["district_name"] as string,
-    state_name: (record["state_name"] as string) || "N/A", // Fallback for missing state_name
-    area: (record["area_"] as string) || "NA",
-    production_: (record["production_"] as string) || "NA", // Add production field
-  }))
-  .sort((a: { crop_year: number; }, b: { crop_year: number; }) => b.crop_year - a.crop_year);
+        const apiResponse = await fetch(apiUrl.toString());
+        if (!apiResponse.ok) throw new Error(`Failed to fetch API data: ${apiResponse.status}`);
+        
+        const apiData = await apiResponse.json();
+        const apiRecords = apiData.records.map((record: {
+          crop: string;
+          season: string;
+          crop_year: number;
+          district_name: string;
+          state_name: string | null;
+          area_: string | null;
+          production_: string | null;
+        }) => ({
+          crop: record.crop,
+          season: record.season,
+          crop_year: record.crop_year,
+          district_name: record.district_name,
+          state_name: record.state_name || "N/A", // Fallback for missing state_name
+          area: record.area_ || "NA",
+          production_: record.production_ || "NA",
+        }));
 
         setStateData(apiRecords);
 
-        // Fetch user inputs from MongoDB Atlas
-        const userInputsResponse = await fetch(`/api/get-user-inputs?state=${encodeURIComponent(stateName)}`);
-        if (!userInputsResponse.ok) {
-          throw new Error(`Failed to fetch user inputs: ${userInputsResponse.status}`);
-        }
+        // Fetch user inputs
+        const userInputsResponse = await fetch(
+          `/api/get-user-inputs?state=${encodeURIComponent(stateName)}`
+        );
+        if (!userInputsResponse.ok) throw new Error("Failed to fetch user inputs");
+        
         const userInputsData = await userInputsResponse.json();
         setUserInputs(userInputsData);
       } catch (err) {
@@ -107,19 +133,19 @@ export default function StateDetailPage() {
     };
 
     fetchStateData();
-  }, [router.query.stateId]);
+  }, [router.query.stateId, selectedDistrict]); // Added selectedDistrict to dependencies
 
   const handleSort = () => {
     const sortedData = [...stateData].sort((a, b) => {
-      if (sortOrder === "asc") {
-        return a.crop_year - b.crop_year;
-      } else {
-        return b.crop_year - a.crop_year;
-      }
+      return sortOrder === "asc" ? b.crop_year - a.crop_year : a.crop_year - b.crop_year;
     });
     setStateData(sortedData);
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
+
+  const filteredUserInputs = selectedDistrict
+    ? userInputs.filter((input) => input.district === selectedDistrict)
+    : userInputs;
 
   if (loading) return <p>Loading data...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -136,9 +162,25 @@ export default function StateDetailPage() {
         />
       </div>
 
+      <div className="mb-6">
+        <label className="block font-medium mb-2">Filter by District</label>
+        <select
+          value={selectedDistrict}
+          onChange={(e) => setSelectedDistrict(e.target.value)}
+          className="border px-4 py-2 rounded w-full text-black"
+        >
+          <option value="">All Districts</option>
+          {districts.map((district, index) => (
+            <option key={index} value={district}>
+              {district}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <h2 className="text-xl font-bold mt-8">User Inputs</h2>
       <div className="overflow-x-auto">
-        {userInputs.length ? (
+        {filteredUserInputs.length ? (
           <table className="table-auto w-full border border-gray-200 mt-4 text-sm">
             <thead>
               <tr className="text-black bg-gray-100">
@@ -155,7 +197,7 @@ export default function StateDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {userInputs.map((input: UserInputData, index: number) => (
+              {filteredUserInputs.map((input, index) => (
                 <tr key={index}>
                   <td className="px-4 py-2 border">{input.name}</td>
                   <td className="px-4 py-2 border">{input.email}</td>
@@ -176,7 +218,7 @@ export default function StateDetailPage() {
         )}
       </div>
 
-      <h2 className="text-xl font-bold mt-8">State Agriculture Data (data.gov.in)</h2>
+      <h2 className="text-xl font-bold mt-8">State Agriculture Data</h2>
       <div className="overflow-x-auto">
         {stateData.length ? (
           <table className="table-auto w-full border border-gray-200 mt-4 text-sm">
@@ -190,7 +232,7 @@ export default function StateDetailPage() {
                     onClick={handleSort}
                     className="ml-2 text-blue-500 underline"
                   >
-                    Sort
+                    {sortOrder === "asc" ? "↑" : "↓"}
                   </button>
                 </th>
                 <th className="px-4 py-2 border">District</th>
@@ -200,7 +242,7 @@ export default function StateDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {stateData.map((record: RecordData, index: number) => (
+              {stateData.map((record, index) => (
                 <tr key={index}>
                   <td className="px-4 py-2 border">{record.crop}</td>
                   <td className="px-4 py-2 border">{record.season}</td>
@@ -214,7 +256,7 @@ export default function StateDetailPage() {
             </tbody>
           </table>
         ) : (
-          <p>No data available for the selected state.</p>
+          <p>No data available for the selected state/district.</p>
         )}
       </div>
     </section>
