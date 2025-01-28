@@ -20,7 +20,7 @@ export default function About() {
           district-wise statistics.
         </li>
         <li>
-          <strong>User-Contributed Information (Feature Coming Soon):</strong>{" "}
+          <strong>User-Contributed Information:</strong>{" "}
           In the near future, users will be able to input and share their
           agricultural data and insights for specific states and districts. This
           feature aims to empower the community by providing crowd-sourced

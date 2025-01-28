@@ -24,7 +24,7 @@ export default function UserInput() {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          "https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=579b464db66ec23bdd000001cdc3b564546246a772a26393094f5645&offset=0&limit=all&format=json"
+          `https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=${process.env.NEXT_PUBLIC_DISTRICT_API_KEY}&offset=0&limit=all&format=json`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch data from the API");
@@ -70,6 +70,16 @@ export default function UserInput() {
     e.preventDefault();
     setStatus("Submitting...");
 
+    if (formData.sownMonth && formData.harvestingMonth) {
+      const sownDate = new Date(formData.sownMonth);
+      const harvestDate = new Date(formData.harvestingMonth);
+      
+      if (harvestDate <= sownDate) {
+        setStatus("Error: Harvesting month must be after sowing month");
+        return;
+      }
+    }
+
     try {
       const response = await fetch("/api/store-user-input", {
         method: "POST",
@@ -99,11 +109,11 @@ export default function UserInput() {
       } else {
         const errorData = await response.json();
         console.error("Error response from API:", errorData);
-        setStatus(`Error: ${errorData.error || "Submission failed"}`);
+        setStatus("Error: Submission failed. Please check your inputs.");
       }
     } catch (error) {
       console.error("Submission error:", error);
-      setStatus(`Error: ${error.message || "Something went wrong"}`);
+      setStatus("Error: Submission failed. Please check your inputs.");
     }
   };
 
@@ -140,6 +150,7 @@ export default function UserInput() {
           <input
             type="tel"
             name="phone"
+            pattern="[0-9]{10}"
             value={formData.phone}
             onChange={handleChange}
             required

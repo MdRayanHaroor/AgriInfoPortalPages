@@ -7,37 +7,47 @@ export default async function handler(req, res) {
 
   const { name, email, message } = req.body;
 
-  // Validate input
   if (!name || !email || !message) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
   try {
-    // Create a Nodemailer transporter
     const transporter = nodemailer.createTransport({
-      service: "gmail", // Use your email provider
+      service: "gmail",
       auth: {
-        user: "mohammedrayan977@gmail.com", // Sender's email address
-        pass: "joxn wzwa qxha hoyt", // Sender's email password or App Password
-      },
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
     });
 
-    // Send the email
+    // Verify connection
+    await transporter.verify();
+
     await transporter.sendMail({
-      from: `"AgriInfo Portal" <mohammedrayan977@gmail.com>`,
-      to: "mohammedrayan977@gmail.com", // Recipient's email address
-      subject: "New Contact Form Submission",
+      from: `"AgriInfo Portal" <${process.env.GMAIL_USER}>`,
+      to: process.env.GMAIL_USER,
+      replyTo: email,
+      subject: "AgriInfoPortal - New Contact Form Submission",
       html: `
         <h3>New Contact Form Submission</h3>
         <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong> ${message}</p>
+        <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
       `,
     });
 
     res.status(200).json({ message: "Email sent successfully!" });
   } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({ error: "Failed to send email." });
+    console.error("Error details:", {
+      errorCode: error.code,
+      errorMessage: error.message,
+      stack: error.stack
+    });
+    
+    res.status(500).json({ 
+      error: "Failed to send email",
+      details: process.env.NODE_ENV === "development" ? error.message : null
+    });
   }
 }

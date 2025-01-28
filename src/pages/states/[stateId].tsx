@@ -61,7 +61,7 @@ export default function StateDetailPage() {
 
         // Fetch districts
         const districtResponse = await fetch(
-          "https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=579b464db66ec23bdd000001cdc3b564546246a772a26393094f5645&offset=0&limit=all&format=json"
+          `https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=${process.env.NEXT_PUBLIC_DISTRICT_API_KEY}&offset=0&limit=all&format=json`
         );
         if (!districtResponse.ok) throw new Error("Failed to fetch district data");
         
@@ -74,7 +74,7 @@ export default function StateDetailPage() {
         setDistricts(filteredDistricts);
 
         // Fetch agriculture data with proper sorting and filtering
-        const apiKey = "579b464db66ec23bdd00000198902acca33045767c8a79dfc3f0ce11";
+        const apiKey = process.env.NEXT_PUBLIC_AGRICULTURE_API_KEY || '';
         const apiUrl = new URL("https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de");
         apiUrl.searchParams.set("api-key", apiKey);
         apiUrl.searchParams.set("format", "json");

@@ -6,9 +6,9 @@ export default function DataGovApi() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch data from the API
+    // Fetch data from the API using environment variable
     fetch(
-      "https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de?api-key=579b464db66ec23bdd00000198902acca33045767c8a79dfc3f0ce11&format=json"
+      `https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de?api-key=${process.env.NEXT_PUBLIC_AGRICULTURE_API_KEY || ""}&format=json`
     )
       .then((response) => {
         if (!response.ok) {
