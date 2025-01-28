@@ -51,7 +51,7 @@ export default function Home() {
           </button>
         </div>
 
-        <h2 className="text-3xl font-bold text-center text-white mb-6">
+        <h2 className="text-3xl font-bold text-center mb-6">
           Explore Agriculture Data on the Map
         </h2>
         {mapData ? (
