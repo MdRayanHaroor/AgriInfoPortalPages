@@ -40,6 +40,14 @@ export default function StateDetailPage() {
   const [selectedCropYear, setSelectedCropYear] = useState<string>("");
   const [allStateData, setAllStateData] = useState<RecordData[]>([]); // New state for complete dataset
 
+  const DISTRICT_NAME_MAPPING: { [key: string]: string } = {
+    'Bagalkote': 'Bagalkot',
+    // Add other district mappings here if needed
+  };
+  
+  function getMappedDistrict(district: string): string {
+    return DISTRICT_NAME_MAPPING[district] || district;
+  }
 
   useEffect(() => {
     const fetchStateData = async () => {
@@ -87,7 +95,8 @@ export default function StateDetailPage() {
         // apiUrl.searchParams.set("sort[crop_year]", "desc"); // Sort by latest crop year
   
         if (selectedDistrict) {
-          apiUrl.searchParams.set("filters[district_name]", selectedDistrict.toUpperCase());
+          const mappedDistrict = getMappedDistrict(selectedDistrict);
+          apiUrl.searchParams.set("filters[district_name]", mappedDistrict.toUpperCase());
         }
         if (selectedCropYear) {
           apiUrl.searchParams.set("filters[crop_year]", selectedCropYear);
@@ -164,30 +173,29 @@ setCropYears(allCropYearsArray); // ✅ Store all unique years correctly
   
   const displayedData = useMemo(() => {
     // Filter data based on selections
-    const filtered = allStateData.filter(record => { // Changed from stateData to allStateData
+    const filtered = allStateData.filter(record => {
+      const mappedDistrict = getMappedDistrict(selectedDistrict);
       const matchesDistrict = selectedDistrict 
-        ? record.district_name === selectedDistrict.toUpperCase()
+        ? record.district_name === mappedDistrict.toUpperCase()
         : true;
       const matchesYear = selectedCropYear
         ? record.crop_year.toString() === selectedCropYear
         : true;
       return matchesDistrict && matchesYear;
     });
+    
     // Sort based on filter state
     const sorted = [...filtered];
-    if (!selectedDistrict && !selectedCropYear) {
-      // Both filters are "All": Sort by district asc -> year desc
-      sorted.sort((a, b) => {
-        const districtCompare = a.district_name.localeCompare(b.district_name);
-        return districtCompare !== 0 ? districtCompare : b.crop_year - a.crop_year;
-      });
-    } else if (!selectedDistrict) {
-      // District filter is "All": Sort by district asc
-      sorted.sort((a, b) => a.district_name.localeCompare(b.district_name));
-    } else if (!selectedCropYear) {
-      // Year filter is "All": Sort by year desc
-      sorted.sort((a, b) => b.crop_year - a.crop_year);
-    }
+  if (!selectedDistrict && !selectedCropYear) {
+    sorted.sort((a, b) => {
+      const districtCompare = a.district_name.localeCompare(b.district_name);
+      return districtCompare !== 0 ? districtCompare : b.crop_year - a.crop_year;
+    });
+  } else if (!selectedDistrict) {
+    sorted.sort((a, b) => a.district_name.localeCompare(b.district_name));
+  } else if (!selectedCropYear) {
+    sorted.sort((a, b) => b.crop_year - a.crop_year);
+  }
   
     // Return first 50 items
     return sorted.slice(0, 50);
