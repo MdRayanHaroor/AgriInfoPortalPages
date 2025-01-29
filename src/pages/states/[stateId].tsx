@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import StateMap from "@/components/StateMap";
 import { stateIdToStateNameMapping } from "@/data/statesMap";
 
@@ -30,67 +30,74 @@ interface UserInputData {
 
 export default function StateDetailPage() {
   const router = useRouter();
-  const [stateData, setStateData] = useState<RecordData[]>([]);
   const [userInputs, setUserInputs] = useState<UserInputData[]>([]);
   const [districts, setDistricts] = useState<string[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  
+  //const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [cropYears, setCropYears] = useState<number[]>([]);
+  const [selectedCropYear, setSelectedCropYear] = useState<string>("");
+  const [allStateData, setAllStateData] = useState<RecordData[]>([]); // New state for complete dataset
+
+
   useEffect(() => {
     const fetchStateData = async () => {
       const rawStateId = router.query.stateId;
       const stateId = Array.isArray(rawStateId) ? rawStateId[0] : rawStateId;
-      
+
+  
       if (!stateId) {
         setError("Invalid state ID");
         setLoading(false);
         return;
       }
-      
+  
       const stateName = stateIdToStateNameMapping[stateId];
       if (!stateName) {
         setError("Invalid state ID");
         setLoading(false);
         return;
       }
-      
+  
       try {
         setLoading(true);
         setError(null);
-        
+  
         // Fetch districts
         const districtResponse = await fetch(
           `https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=${process.env.NEXT_PUBLIC_DISTRICT_API_KEY}&offset=0&limit=all&format=json`
         );
         if (!districtResponse.ok) throw new Error("Failed to fetch district data");
-        
+  
         const districtData = await districtResponse.json();
         const filteredDistricts = districtData.records
-        .filter((record: { state_name_english: string }) => record.state_name_english === stateName)
-        .map((record: { district_name_english: string }) => record.district_name_english)
-        .sort();
-        
+          .filter((record: { state_name_english: string }) => record.state_name_english === stateName)
+          .map((record: { district_name_english: string }) => record.district_name_english)
+          .sort();
+  
         setDistricts(filteredDistricts);
-        
-        // Fetch agriculture data with proper sorting and filtering
+  
+        // Fetch agriculture data with filtering for district & crop year
         const apiKey = process.env.NEXT_PUBLIC_AGRICULTURE_API_KEY || '';
         const apiUrl = new URL("https://api.data.gov.in/resource/35be999b-0208-4354-b557-f6ca9a5355de");
         apiUrl.searchParams.set("api-key", apiKey);
         apiUrl.searchParams.set("format", "json");
         apiUrl.searchParams.set("filters[state_name]", stateName);
-        apiUrl.searchParams.set("sort[crop_year]", "desc"); // Server-side sorting
-        
+        // apiUrl.searchParams.set("sort[crop_year]", "desc"); // Sort by latest crop year
+  
         if (selectedDistrict) {
           apiUrl.searchParams.set("filters[district_name]", selectedDistrict.toUpperCase());
         }
-        
-        apiUrl.searchParams.set("limit", "50");
-        
+        if (selectedCropYear) {
+          apiUrl.searchParams.set("filters[crop_year]", selectedCropYear);
+        }
+  
+        apiUrl.searchParams.set("limit", "all");
+  
         const apiResponse = await fetch(apiUrl.toString());
         if (!apiResponse.ok) throw new Error(`Failed to fetch API data: ${apiResponse.status}`);
-        
+  
         const apiData = await apiResponse.json();
         const apiRecords = apiData.records.map((record: {
           crop: string;
@@ -105,19 +112,38 @@ export default function StateDetailPage() {
           season: record.season,
           crop_year: record.crop_year,
           district_name: record.district_name,
-          state_name: record.state_name || "N/A", // Fallback for missing state_name
+          state_name: record.state_name || "N/A",
           area: record.area_ || "NA",
           production_: record.production_ || "NA",
         }));
-        
-        setStateData(apiRecords);
-        
+  
+        //setStateData(apiRecords);
+        setAllStateData(apiRecords);
+  
+        // Extract and set available crop years dynamically
+        // Extract all unique crop years dynamically from API response
+// Extract all unique crop years dynamically from API response
+const allCropYearsSet = new Set<number>();
+
+apiData.records.forEach((record: { crop_year: number }) => {
+  const year = record.crop_year; // Extract crop_year
+  if (year && !isNaN(Number(year))) {
+    allCropYearsSet.add(Number(year)); // Convert to number & add to Set
+  }
+});
+
+const allCropYearsArray = Array.from(allCropYearsSet).sort((a, b) => b - a); // Sort in descending order
+
+setCropYears(allCropYearsArray); // ✅ Store all unique years correctly
+
+      
+  
         // Fetch user inputs
         const userInputsResponse = await fetch(
           `/api/get-user-inputs?state=${encodeURIComponent(stateName)}`
         );
         if (!userInputsResponse.ok) throw new Error("Failed to fetch user inputs");
-        
+  
         const userInputsData = await userInputsResponse.json();
         setUserInputs(userInputsData);
       } catch (err) {
@@ -132,17 +158,49 @@ export default function StateDetailPage() {
         setLoading(false);
       }
     };
-    
-    fetchStateData();
-  }, [router.query.stateId, selectedDistrict]); // Added selectedDistrict to dependencies
   
-  const handleSort = () => {
-    const sortedData = [...stateData].sort((a, b) => {
-      return sortOrder === "asc" ? b.crop_year - a.crop_year : a.crop_year - b.crop_year;
+    fetchStateData();
+  }, [router.query.stateId, selectedDistrict, selectedCropYear]); // Added selectedCropYear as a dependency
+  
+  const displayedData = useMemo(() => {
+    // Filter data based on selections
+    const filtered = allStateData.filter(record => { // Changed from stateData to allStateData
+      const matchesDistrict = selectedDistrict 
+        ? record.district_name === selectedDistrict.toUpperCase()
+        : true;
+      const matchesYear = selectedCropYear
+        ? record.crop_year.toString() === selectedCropYear
+        : true;
+      return matchesDistrict && matchesYear;
     });
-    setStateData(sortedData);
-    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-  };
+    // Sort based on filter state
+    const sorted = [...filtered];
+    if (!selectedDistrict && !selectedCropYear) {
+      // Both filters are "All": Sort by district asc -> year desc
+      sorted.sort((a, b) => {
+        const districtCompare = a.district_name.localeCompare(b.district_name);
+        return districtCompare !== 0 ? districtCompare : b.crop_year - a.crop_year;
+      });
+    } else if (!selectedDistrict) {
+      // District filter is "All": Sort by district asc
+      sorted.sort((a, b) => a.district_name.localeCompare(b.district_name));
+    } else if (!selectedCropYear) {
+      // Year filter is "All": Sort by year desc
+      sorted.sort((a, b) => b.crop_year - a.crop_year);
+    }
+  
+    // Return first 50 items
+    return sorted.slice(0, 50);
+  }, [allStateData, selectedDistrict, selectedCropYear]);
+   
+  
+  // const handleSort = () => {
+  //   const sortedData = [...stateData].sort((a, b) => {
+  //     return sortOrder === "asc" ? b.crop_year - a.crop_year : a.crop_year - b.crop_year;
+  //   });
+  //   setStateData(sortedData);
+  //   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  // };
   
   const filteredUserInputs = selectedDistrict
   ? userInputs.filter((input) => input.district === selectedDistrict)
@@ -183,6 +241,23 @@ export default function StateDetailPage() {
     ))}
     </select>
     </div>
+
+    <div className="mb-6">
+  <label className="block font-medium mb-2">Filter by Crop Year</label>
+  <select
+    value={selectedCropYear}
+    onChange={(e) => setSelectedCropYear(e.target.value)}
+    className="border px-4 py-2 rounded w-full text-black"
+  >
+    <option value="">All Years</option>
+    {cropYears.map((year, index) => (
+      <option key={index} value={year}>
+        {year}
+      </option>
+    ))}
+  </select>
+</div>
+
     
     <h2 className="text-xl font-bold mt-8 mb-2">User Inputs</h2>
 {filteredUserInputs.length > 0 ? (
@@ -195,7 +270,6 @@ export default function StateDetailPage() {
         <p className="text-sm text-gray-300">🌿 {input.fruitVegetable} ({input.variety})</p>
         <p className="text-sm text-gray-300">📏 Area: {input.area} acres</p>
         <p className="text-sm text-gray-300">📅 Sown: {input.sownMonth} | Harvest: {input.harvestingMonth}</p>
-        🗓️ Display `createdAt` in a readable format
         <p className="text-xs text-gray-400 mt-2">
           Submitted on: {new Date(input.createdAt).toLocaleString("en-US", {
             year: "numeric",
@@ -214,10 +288,10 @@ export default function StateDetailPage() {
     
     <h2 className="text-xl font-bold mt-8">State Agriculture Data</h2>
     <p className="text-gray-400 text-sm mb-2">
-  Showing <b>{stateData.length}</b> rows of agriculture data for <b>{selectedDistrict || "All Districts"}</b>.
+  Showing <b>{displayedData.length}</b> rows of agriculture data for <b>{selectedDistrict || "All Districts"}</b>.
 </p>
     <div className="overflow-x-auto">
-    {stateData.length ? (
+    {displayedData.length ? (
       <table className="table-auto w-full border border-gray-200 mt-4 text-sm">
       <thead>
       <tr className="text-black bg-gray-100">
@@ -225,12 +299,12 @@ export default function StateDetailPage() {
       <th className="px-4 py-2 border">Season</th>
       <th className="px-4 py-2 border">
       Year
-      <button
+      {/* <button
       onClick={handleSort}
       className="ml-2 text-blue-500 underline"
       >
       {sortOrder === "asc" ? "↑" : "↓"}
-      </button>
+      </button> */}
       </th>
       <th className="px-4 py-2 border">District</th>
       <th className="px-4 py-2 border">State</th>
@@ -239,7 +313,7 @@ export default function StateDetailPage() {
       </tr>
       </thead>
       <tbody>
-      {stateData.map((record, index) => (
+      {displayedData.map((record, index) => (
         <tr key={index}>
         <td className="px-4 py-2 border">{record.crop}</td>
         <td className="px-4 py-2 border">{record.season}</td>
