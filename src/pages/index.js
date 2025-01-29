@@ -37,25 +37,26 @@ export default function Home() {
       <main className="p-6 max-w-6xl mx-auto">
         {/* Main Buttons */}
         <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-6">
-          <button
-            onClick={() => router.push("/states")}
-            className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
-          >
-            View All States
-          </button>
-          <button
-            onClick={() => router.push("/user-input")}
-            className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition"
-          >
-            Input Data
-          </button>
-        </div>
+  <button
+    onClick={() => router.push("/states")}
+    className="bg-blue-600 text-white px-6 py-3 rounded shadow-md hover:bg-blue-700 transition flex items-center gap-2"
+  >
+    View All States
+  </button>
+  <button
+    onClick={() => router.push("/user-input")}
+    className="bg-green-600 text-white px-6 py-3 rounded shadow-md hover:bg-green-700 transition flex items-center gap-2"
+  >
+    Input Data
+  </button>
+</div>
+
 
         <h2 className="text-3xl font-bold text-center mb-6">
           Explore Agriculture Data on the Map
         </h2>
         {mapData ? (
-          <div className="w-full h-[50vh] min-h-[300px] border bg-black">
+          <div className="w-full h-[50vh] min-h-[300px] border bg-gradient-to-b from-gray-900 to-black rounded-md shadow-lg">
             <ComposableMap
               projection="geoMercator"
               projectionConfig={{ scale: 1000 }}
@@ -122,7 +123,11 @@ export default function Home() {
             </ComposableMap>
           </div>
         ) : (
-          <p>Loading map...</p>
+            
+    <div className="flex justify-center items-center h-64">
+    <div className="animate-spin h-10 w-10 border-t-2 border-white rounded-full"></div>
+    </div>
+  
         )}
       </main>
     </>

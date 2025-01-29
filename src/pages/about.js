@@ -37,8 +37,8 @@ export default function About() {
       </p>
       <p className="text-lg">
         Have suggestions or ideas? We’d love to hear from you! Contact us at{" "}
-        <a href="mailto:contact@agriinfoportal.com" className="text-blue-600 underline">
-          contact@agriinfoportal.com
+        <a href="mailto:mohammedrayan977@gmail.com" className="text-blue-600 underline">
+          mohammedrayan977@gmail.com
         </a>.
       </p>
     </section>
