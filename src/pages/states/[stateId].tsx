@@ -210,7 +210,7 @@ export default function StateDetailPage() {
     }
     
     // Return first 50 items
-    return sorted.slice(0, 50);
+    return sorted.slice(0, );
   }, [allStateData, selectedDistrict, selectedCropYear, selectedCrop]);
   
   
