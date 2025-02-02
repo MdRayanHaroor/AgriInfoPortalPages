@@ -178,7 +178,7 @@ export default function StateDetailPage() {
     };
     
     fetchStateData();
-  }, [router.query.stateId, selectedDistrict, selectedCropYear, selectedCrop, getMappedDistrict]); // Added selectedCropYear as a dependency
+  }, [router.query.stateId, selectedDistrict, selectedCropYear, selectedCrop]); // Added selectedCropYear as a dependency
   
   const displayedData = useMemo(() => {
     // Filter data based on selections
@@ -211,7 +211,7 @@ export default function StateDetailPage() {
     
     // Return first 50 items
     return sorted.slice(0, );
-  }, [allStateData, selectedDistrict, selectedCropYear, selectedCrop, getMappedDistrict]);
+  }, [allStateData, selectedDistrict, selectedCropYear, selectedCrop]);
   
   
   // const handleSort = () => {
