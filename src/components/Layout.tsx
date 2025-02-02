@@ -8,8 +8,11 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  //const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // dropdownOpen controls whether the dropdown is visible
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // dropdownPersistent controls whether a click on the username has locked the dropdown open
+  const [dropdownPersistent, setDropdownPersistent] = useState(false);
 
   // Retrieve AuthContext and throw an error if it's undefined
   const authContext = useContext(AuthContext);
@@ -20,8 +23,36 @@ export default function Layout({ children }: LayoutProps) {
   }
   const { user, logout } = authContext;
 
+  // Handle logout and then close the dropdown
   const handleLogout = async () => {
     await logout();
+    setDropdownOpen(false);
+    setDropdownPersistent(false);
+  };
+
+  // Toggle persistent mode when the username is clicked
+  const handleUsernameClick = () => {
+    if (dropdownPersistent) {
+      // If already persistent, turn it off (close the dropdown)
+      setDropdownPersistent(false);
+      setDropdownOpen(false);
+    } else {
+      // If not persistent, enable persistent mode and open the dropdown
+      setDropdownPersistent(true);
+      setDropdownOpen(true);
+    }
+  };
+
+  // When hovering over the container, open the dropdown
+  const handleMouseEnter = () => {
+    setDropdownOpen(true);
+  };
+
+  // When leaving the container, close the dropdown only if not in persistent mode
+  const handleMouseLeave = () => {
+    if (!dropdownPersistent) {
+      setDropdownOpen(false);
+    }
   };
 
   return (
@@ -64,7 +95,7 @@ export default function Layout({ children }: LayoutProps) {
           </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-4">
+          <div className="hidden md:flex gap-4 items-center">
             <Link href="/" className="hover:underline">
               Home
             </Link>
@@ -86,24 +117,38 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* User Authentication Links */}
             {user ? (
-              <div className="relative group">
-                <button className="hover:underline focus:outline-none">
+              // Wrap the username button and dropdown in a container that listens for mouse events.
+              <div
+                className="relative inline-block"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  onClick={handleUsernameClick}
+                  className="hover:underline focus:outline-none"
+                >
                   {user.name} ⬇
                 </button>
-                <div className="absolute right-0 mt-2 w-32 bg-white text-black shadow-md rounded hidden group-hover:block">
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 hover:bg-gray-200"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
-                  >
-                    Logout
-                  </button>
-                </div>
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-full w-32 bg-white text-black shadow-md rounded">
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 hover:bg-gray-200"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        setDropdownPersistent(false);
+                      }}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link href="/login" className="hover:underline">

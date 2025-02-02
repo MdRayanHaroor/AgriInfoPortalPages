@@ -140,7 +140,7 @@ export default function UserInput() {
     {loadingStates ? (
       <p className="text-center text-gray-400">🔄 Loading...</p>
     ) : (
-      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-800 p-6 rounded-lg shadow-lg">
+      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-800 p-6 rounded-lg shadow-lg text-white">
       {/* Name */}
       <div>
       <label className="block font-medium mb-2">Name*</label>
