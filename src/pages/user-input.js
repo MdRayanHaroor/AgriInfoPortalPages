@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function UserInput() {
+  const { user } = useContext(AuthContext) || {}; // Get the logged-in user from AuthContext
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,6 +25,21 @@ export default function UserInput() {
   const [status, setStatus] = useState("");
   
   const maxVillageLength = 50; // Max length for village input
+  
+  // Automatically populate fields from logged-in user data
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.mobile || "",
+        state: user.state || "",
+        district: user.district || "",
+        village: user.village || "",
+      }));
+    }
+  }, [user]);
   
   // Fetch States
   useEffect(() => {
@@ -60,9 +78,9 @@ export default function UserInput() {
         
         const data = await response.json();
         const filteredDistricts = data.records
-        .filter((record) => record.state_name_english === formData.state)
-        .map((record) => record.district_name_english)
-        .sort();
+          .filter((record) => record.state_name_english === formData.state)
+          .map((record) => record.district_name_english)
+          .sort();
         setDistricts(filteredDistricts);
       } catch (error) {
         console.error("Error fetching districts:", error);
@@ -135,182 +153,189 @@ export default function UserInput() {
   
   return (
     <section className="p-6 max-w-4xl mx-auto">
-    <h1 className="text-3xl font-bold mb-4 text-center">User Input Form</h1>
-    
-    {loadingStates ? (
-      <p className="text-center text-gray-400">🔄 Loading...</p>
-    ) : (
-      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-800 p-6 rounded-lg shadow-lg text-white">
-      {/* Name */}
-      <div>
-      <label className="block font-medium mb-2">Name*</label>
-      <input
-      type="text"
-      name="name"
-      value={formData.name}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black focus:ring-2 focus:ring-blue-500"
-      />
-      </div>
-
-      <div>
-      <label className="block font-medium mb-2">Phone*</label>
-      <input
-      type="tel"
-      name="phone"
-      pattern="[0-9]{10}"
-      value={formData.phone}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
+      <h1 className="text-3xl font-bold mb-4 text-center">User Input Form</h1>
       
-      <div>
-      <label className="block font-medium mb-2">Email</label>
-      <input
-      type="email"
-      name="email"
-      value={formData.email}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      {/* State Dropdown */}
-      <div>
-      <label className="block font-medium mb-2">State*</label>
-      <select
-      name="state"
-      value={formData.state}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      >
-      <option value="">Select State</option>
-      {states.map((state, index) => (
-        <option key={index} value={state}>
-        {state}
-        </option>
-      ))}
-      </select>
-      </div>
-      
-      {/* District Dropdown */}
-      <div>
-      <label className="block font-medium mb-2">District*</label>
-      {loadingDistricts ? (
-        <p className="text-sm text-gray-400">🔄 Loading...</p>
+      {loadingStates ? (
+        <p className="text-center text-gray-400">🔄 Loading...</p>
       ) : (
-        <select
-        name="district"
-        value={formData.district}
-        onChange={handleChange}
-        required
-        className="border px-4 py-2 rounded w-full text-black"
-        disabled={!formData.state}
-        >
-        <option value="">Select District</option>
-        {districts.map((district, index) => (
-          <option key={index} value={district}>
-          {district}
-          </option>
-        ))}
-        </select>
+        <form onSubmit={handleSubmit} className="space-y-4 bg-gray-800 p-6 rounded-lg shadow-lg text-white">
+          {/* Name */}
+          <div>
+            <label className="block font-medium mb-2">Name*</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+  
+          {/* Phone */}
+          <div>
+            <label className="block font-medium mb-2">Phone*</label>
+            <input
+              type="tel"
+              name="phone"
+              pattern="[0-9]{10}"
+              value={formData.phone}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* Email */}
+          <div>
+            <label className="block font-medium mb-2">Email*</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* State Dropdown */}
+          <div>
+            <label className="block font-medium mb-2">State*</label>
+            <select
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            >
+              <option value="">Select State</option>
+              {states.map((state, index) => (
+                <option key={index} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {/* District Dropdown */}
+          <div>
+            <label className="block font-medium mb-2">District*</label>
+            {loadingDistricts ? (
+              <p className="text-sm text-gray-400">🔄 Loading...</p>
+            ) : (
+              <select
+                name="district"
+                value={formData.district}
+                onChange={handleChange}
+                required
+                className="border px-4 py-2 rounded w-full text-black"
+                disabled={!formData.state}
+              >
+                <option value="">Select District</option>
+                {districts.map((district, index) => (
+                  <option key={index} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          
+          {/* Village Input with Character Counter */}
+          <div>
+            <label className="block font-medium mb-2">Village*</label>
+            <input
+              type="text"
+              name="village"
+              value={formData.village}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+              maxLength={maxVillageLength}
+            />
+            <p className="text-sm text-gray-400 mt-1">
+              {formData.village.length}/{maxVillageLength} characters
+            </p>
+          </div>
+          
+          {/* Fruit/Vegetable/Seed */}
+          <div>
+            <label className="block font-medium mb-2">Fruit/Vegetable/Seed*</label>
+            <input
+              type="text"
+              name="fruitVegetable"
+              value={formData.fruitVegetable}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* Variety */}
+          <div>
+            <label className="block font-medium mb-2">Variety</label>
+            <input
+              type="text"
+              name="variety"
+              value={formData.variety}
+              onChange={handleChange}
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* Area */}
+          <div>
+            <label className="block font-medium mb-2">Area (in acres)*</label>
+            <input
+              type="number"
+              name="area"
+              value={formData.area}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* Sown Month */}
+          <div>
+            <label className="block font-medium mb-2">Sown Month*</label>
+            <input
+              type="month"
+              name="sownMonth"
+              value={formData.sownMonth}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* Harvesting Month */}
+          <div>
+            <label className="block font-medium mb-2">Harvesting Month*</label>
+            <input
+              type="month"
+              name="harvestingMonth"
+              value={formData.harvestingMonth}
+              onChange={handleChange}
+              required
+              className="border px-4 py-2 rounded w-full text-black"
+            />
+          </div>
+          
+          {/* Submit Button */}
+          <div>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
       )}
-      </div>
       
-      {/* Village Input with Character Counter */}
-      <div>
-      <label className="block font-medium mb-2">Village*</label>
-      <input
-      type="text"
-      name="village"
-      value={formData.village}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      maxLength={maxVillageLength}
-      />
-      <p className="text-sm text-gray-400 mt-1">
-      {formData.village.length}/{maxVillageLength} characters
-      </p>
-      </div>
-      
-      <div>
-      <label className="block font-medium mb-2">Fruit/Vegetable/Seed*</label>
-      <input
-      type="text"
-      name="fruitVegetable"
-      value={formData.fruitVegetable}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      <div>
-      <label className="block font-medium mb-2">Variety</label>
-      <input
-      type="text"
-      name="variety"
-      value={formData.variety}
-      onChange={handleChange}
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      <div>
-      <label className="block font-medium mb-2">Area (in acres)*</label>
-      <input
-      type="number"
-      name="area"
-      value={formData.area}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      <div>
-      <label className="block font-medium mb-2">Sown Month*</label>
-      <input
-      type="month"
-      name="sownMonth"
-      value={formData.sownMonth}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      <div>
-      <label className="block font-medium mb-2">Harvesting Month*</label>
-      <input
-      type="month"
-      name="harvestingMonth"
-      value={formData.harvestingMonth}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      {/* Submit Button */}
-      <div>
-      <button
-      type="submit"
-      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-      >
-      Submit
-      </button>
-      </div>
-      </form>
-    )}
-    
-    {status && <p className="mt-4 text-center text-lg">{status}</p>}
+      {status && <p className="mt-4 text-center text-lg">{status}</p>}
     </section>
   );
 }
