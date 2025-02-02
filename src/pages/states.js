@@ -11,6 +11,13 @@ export default function States() {
   
   return (
     <main className="p-6 max-w-6xl mx-auto">
+
+<div className="mb-4 text-sm">
+                <Link href="/" className="text-blue-500 hover:underline">
+                    ⬅ Back to Home
+                </Link>
+            </div>
+    
     <h2 className="text-3xl font-bold text-center mb-6">Select a State</h2>
     
     {/* Search Box */}

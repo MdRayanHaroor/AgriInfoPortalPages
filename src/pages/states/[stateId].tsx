@@ -178,7 +178,7 @@ export default function StateDetailPage() {
     };
     
     fetchStateData();
-  }, [router.query.stateId, selectedDistrict, selectedCropYear, selectedCrop]); // Added selectedCropYear as a dependency
+  }, [router.query.stateId, selectedDistrict, selectedCropYear, selectedCrop, getMappedDistrict]); // Added selectedCropYear as a dependency
   
   const displayedData = useMemo(() => {
     // Filter data based on selections
@@ -211,7 +211,7 @@ export default function StateDetailPage() {
     
     // Return first 50 items
     return sorted.slice(0, );
-  }, [allStateData, selectedDistrict, selectedCropYear, selectedCrop]);
+  }, [allStateData, selectedDistrict, selectedCropYear, selectedCrop, getMappedDistrict]);
   
   
   // const handleSort = () => {
@@ -323,7 +323,7 @@ export default function StateDetailPage() {
     
     
     
-    <h2 className="text-xl font-bold mt-8">State Agriculture Data</h2>
+    <h2 className="text-xl font-bold mt-8">State Agriculture Data (data.gov.in)</h2>
     <p className="text-gray-400 text-sm mb-2">
     Showing <b>{displayedData.length}</b> rows of agriculture data for <b>{selectedDistrict || "All Districts"}</b>.
     </p>

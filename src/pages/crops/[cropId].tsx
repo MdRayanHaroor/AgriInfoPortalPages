@@ -11,12 +11,28 @@ interface CropData {
     production_: string;
 }
 
+interface UserInputData {
+    name: string;
+    email: string;
+    phone: string;
+    state: string;
+    district: string;
+    village: string;
+    fruitVegetable: string;
+    variety: string;
+    area: number;
+    sownMonth: string;
+    harvestingMonth: string;
+    createdAt: Date;
+  }
+
 export default function CropDetailPage() {
     const router = useRouter();
     const { cropId } = router.query; // Get the selected crop from URL
     const [cropData, setCropData] = useState<CropData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [userInputs, setUserInputs] = useState<UserInputData[]>([]);
     
     // Filters
     const [states, setStates] = useState<string[]>([]);
@@ -53,16 +69,22 @@ export default function CropDetailPage() {
                     crop_year: number; 
                     area_: string | null; 
                     production_: string | null;
-                  }) => ({
+                }) => ({
                     state_name: record.state_name,
                     district_name: record.district_name,
                     season: record.season,
                     crop_year: record.crop_year,
                     area: record.area_ || "NA",
                     production_: record.production_ || "NA",
-                  }));
+                }));
                 
                 setCropData(processedData);
+                
+                const userInputsResponse = await fetch(`/api/get-user-inputs?fruitVegetable=${encodeURIComponent(cropId as string)}`);
+                if (!userInputsResponse.ok) throw new Error("Failed to fetch user inputs");
+                
+                const userInputsData = await userInputsResponse.json();
+                setUserInputs(userInputsData);
                 
                 // Extract unique filters dynamically
                 const uniqueStates = Array.from(new Set(processedData.map((record: { state_name: string; }) => record.state_name))).sort() as string[];
@@ -208,7 +230,36 @@ export default function CropDetailPage() {
         </select>
         </div>
         </div>
-        
+
+        <h2 className="text-xl font-bold mt-8 mb-2">User Inputs</h2>
+{userInputs.length > 0 ? (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-2"> {/* Adjust layout */}
+    {userInputs.map((input, index) => (
+      <div key={index} className="border p-4 rounded-md bg-gray-800 text-white shadow-md">
+        <h3 className="text-lg font-semibold mb-1">{input.name}</h3> {/* Added spacing */}
+        <p className="text-sm text-gray-300">{input.email} | {input.phone}</p>
+        <p className="text-sm text-gray-300">📍 {input.district}, {input.village}</p>
+        <p className="text-sm text-gray-300">🌿 {input.fruitVegetable} ({input.variety})</p>
+        <p className="text-sm text-gray-300">📏 Area: {input.area} acres</p>
+        <p className="text-sm text-gray-300">📅 Sown: {input.sownMonth} | Harvest: {input.harvestingMonth}</p>
+        <p className="text-xs text-gray-400 mt-2">
+          Submitted on: {new Date(input.createdAt).toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </p>
+      </div>
+    ))}
+  </div>
+) : (
+  <p className="text-gray-400 mt-4">No user inputs available for this crop.</p>
+)}
+
+<h2 className="text-xl font-bold mt-8">State Agriculture Data (data.gov.in)</h2>
+<p className="text-gray-400 text-sm mb-2">
+    Showing <b>{filteredCropData.length}</b> rows of agriculture data for <b>{cropId || "All Crops"}</b>.
+    </p>
         {/* Data Table */}
         {filteredCropData.length > 0 ? (
             <div className="overflow-x-auto">
