@@ -168,7 +168,7 @@ const Register = () => {
         name="emailOtp"
         value={otp.emailOtp}
         onChange={handleOtpChange}
-        className="mt-4 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+        className="dark:text-black mt-4 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         placeholder="Enter OTP"
         required
         />
@@ -197,7 +197,7 @@ const Register = () => {
       name="mobile"
       value={formData.mobile}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       {!otpSent.mobile ? (
@@ -214,7 +214,7 @@ const Register = () => {
         name="mobileOtp"
         value={otp.mobileOtp}
         onChange={handleOtpChange}
-        className="mt-4 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+        className="dark:text-black mt-4 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         placeholder="Enter OTP"
         required
         />
@@ -241,7 +241,7 @@ const Register = () => {
       name="name"
       value={formData.name}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       </div>
@@ -252,7 +252,7 @@ const Register = () => {
       name="address"
       value={formData.address}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       </div>
@@ -263,7 +263,7 @@ const Register = () => {
       name="state"
       value={formData.state}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       </div>
@@ -274,7 +274,7 @@ const Register = () => {
       name="district"
       value={formData.district}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       </div>
@@ -285,7 +285,7 @@ const Register = () => {
       name="village"
       value={formData.village}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       </div>
@@ -366,7 +366,7 @@ const Register = () => {
       name="password"
       value={formData.password}
       onChange={handleChange}
-      className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       required
       />
       </div>
