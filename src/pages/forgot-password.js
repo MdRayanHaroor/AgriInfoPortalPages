@@ -83,16 +83,17 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
         {step === 1 && (
           <>
-            <h1 className="text-3xl font-bold text-center mb-6">Forgot Password</h1>
+            <h1 className="dark:text-black text-3xl font-bold text-center mb-6">Forgot Password</h1>
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div>
                 <label className="block text-gray-700">Email</label>
                 <input
                   type="email"
                   value={email}
+                  placeholder="Enter Your Registered Email ID"
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <button
@@ -107,7 +108,7 @@ export default function ForgotPassword() {
         )}
         {step === 2 && (
           <>
-            <h1 className="text-3xl font-bold text-center mb-6">Reset Password</h1>
+            <h1 className="dark:text-black text-3xl font-bold text-center mb-6">Reset Password</h1>
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
                 <label className="block text-gray-700">OTP</label>
@@ -116,7 +117,7 @@ export default function ForgotPassword() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   required
-                  className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               {/* New Password Field with Reveal Toggle */}
@@ -127,7 +128,7 @@ export default function ForgotPassword() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  className="dark:text-black dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
                 />
                 <button
                   type="button"
@@ -144,7 +145,7 @@ export default function ForgotPassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <button
