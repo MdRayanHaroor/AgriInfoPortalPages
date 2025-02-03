@@ -79,7 +79,6 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-              
             />
             {/* Eye Icon Button */}
             <button
@@ -106,8 +105,15 @@ export default function Login() {
             )}
           </button>
         </form>
-        
+
+        {/* Forgot Password Link */}
         <p className="mt-4 text-center text-gray-600">
+          <Link href="/forgot-password">
+            <span className="text-blue-600 hover:underline">Forgot Password?</span>
+          </Link>
+        </p>
+
+        <p className="mt-2 text-center text-gray-600">
           Don&apos;t have an account?{" "}
           <Link href="/register">
             <span className="text-blue-600 hover:underline">Register</span>

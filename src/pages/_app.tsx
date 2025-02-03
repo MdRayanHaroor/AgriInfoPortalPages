@@ -13,7 +13,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
   
   const { user, isLoading } = authContext;
-  const publicRoutes = useMemo(() => ["/login", "/register"], []);
+  const publicRoutes = useMemo(() => ["/login", "/register",  "/forgot-password"], []);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,7 +23,11 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [router, isLoading, user, router.pathname, publicRoutes]);
 
   if (isLoading || (!user && !publicRoutes.includes(router.pathname))) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+      </div>
+    );
   }
 
   return <>{children}</>;
