@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
 
 export default function UserInput() {
@@ -18,8 +18,16 @@ export default function UserInput() {
     harvestingMonth: "",
   });
   
+  // Add these along with your other useState declarations:
+const [showFruitSuggestions, setShowFruitSuggestions] = useState(true);
+const [fruitSuggestionIndex, setFruitSuggestionIndex] = useState(-1);
+
+const [showVarietySuggestions, setShowVarietySuggestions] = useState(true);
+const [varietySuggestionIndex, setVarietySuggestionIndex] = useState(-1);
+
   const [states, setStates] = useState([]); // For state dropdown
   const [districts, setDistricts] = useState([]); // For district dropdown
+  const [userInputs, setUserInputs] = useState([]); // For suggestions
   const [loadingStates, setLoadingStates] = useState(true);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [status, setStatus] = useState("");
@@ -92,12 +100,58 @@ export default function UserInput() {
     fetchDistricts();
   }, [formData.state]);
   
+  // Fetch user inputs for suggestions when state changes (or when you want to update suggestions)
+  useEffect(() => {
+    const fetchUserInputs = async () => {
+      try {
+        if (!formData.state) return;
+        const response = await fetch(
+          `/api/get-user-inputs?state=${encodeURIComponent(formData.state)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("User inputs:", data); // Log to check what data you receive
+          setUserInputs(data);
+        }
+      } catch (error) {
+        console.error("Error fetching user inputs:", error);
+      }
+    };
+    fetchUserInputs();
+  }, [formData.state]);  
+  
+  // Compute suggestions for Fruit/Vegetable/Seed based on userInputs, state, and district
+  const fruitSuggestions = useMemo(() => {
+    const suggestions = userInputs
+      .filter(
+        (input) =>
+          input.state === formData.state &&
+          input.district === formData.district &&
+          input.fruitVegetable.trim() !== ""
+      )
+      .map((input) => input.fruitVegetable);
+    return Array.from(new Set(suggestions));
+  }, [userInputs, formData.state, formData.district]);  
+  
+  // Compute suggestions for Variety based on userInputs, state, and district
+  const varietySuggestions = useMemo(() => {
+    const suggestions = userInputs
+      .filter(
+        (input) =>
+          input.state === formData.state &&
+          input.district === formData.district &&
+          input.variety.trim() !== ""
+      )
+      .map((input) => input.variety);
+    return Array.from(new Set(suggestions));
+  }, [userInputs, formData.state, formData.district]);
+  
   // Handle Input Change
   const handleChange = (e) => {
     const { name, value } = e.target;
     
     if (name === "state") {
-      setFormData((prev) => ({ ...prev, state: value, district: "" })); // Reset district
+      setFormData((prev) => ({ ...prev, state: value, district: "" })); // Reset district when state changes
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -259,30 +313,128 @@ export default function UserInput() {
             </p>
           </div>
           
-          {/* Fruit/Vegetable/Seed */}
-          <div>
-            <label className="block font-medium mb-2">Fruit/Vegetable/Seed*</label>
-            <input
-              type="text"
-              name="fruitVegetable"
-              value={formData.fruitVegetable}
-              onChange={handleChange}
-              required
-              className="border px-4 py-2 rounded w-full text-black"
-            />
-          </div>
+          {/* Fruit/Vegetable/Seed with Suggestions */}
+          <div className="relative">
+  <label className="block font-medium mb-2">Fruit/Vegetable/Seed*</label>
+  <input
+    type="text"
+    name="fruitVegetable"
+    value={formData.fruitVegetable}
+    onChange={(e) => {
+      handleChange(e);
+      setShowFruitSuggestions(true); // Ensure the suggestions are shown on input change
+      setFruitSuggestionIndex(-1);
+    }}
+    onKeyDown={(e) => {
+      const filtered = fruitSuggestions.filter((sugg) =>
+        sugg.toLowerCase().includes(formData.fruitVegetable.toLowerCase())
+      );
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setFruitSuggestionIndex((prev) =>
+          prev < filtered.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setFruitSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+      } else if (e.key === "Enter") {
+        if (fruitSuggestionIndex >= 0 && fruitSuggestionIndex < filtered.length) {
+          e.preventDefault();
+          setFormData({ ...formData, fruitVegetable: filtered[fruitSuggestionIndex] });
+          setFruitSuggestionIndex(-1);
+          setShowFruitSuggestions(false);
+        }
+      }
+    }}
+    required
+    className="border px-4 py-2 rounded w-full text-black"
+  />
+  {formData.fruitVegetable && showFruitSuggestions && fruitSuggestions && fruitSuggestions.length > 0 && (
+    <ul className="absolute z-50 border border-gray-300 bg-white mt-1 max-h-40 overflow-y-auto text-black w-full">
+      {fruitSuggestions
+        .filter((sugg) =>
+          sugg.toLowerCase().includes(formData.fruitVegetable.toLowerCase())
+        )
+        .map((sugg, index) => (
+          <li
+            key={index}
+            onClick={() => {
+              setFormData({ ...formData, fruitVegetable: sugg });
+              setFruitSuggestionIndex(-1);
+              setShowFruitSuggestions(false);
+            }}
+            className={`px-4 py-2 cursor-pointer hover:bg-gray-200 ${
+              fruitSuggestionIndex === index ? "bg-gray-300" : ""
+            }`}
+          >
+            {sugg}
+          </li>
+        ))}
+    </ul>
+  )}
+</div>
+
           
-          {/* Variety */}
-          <div>
-            <label className="block font-medium mb-2">Variety</label>
-            <input
-              type="text"
-              name="variety"
-              value={formData.variety}
-              onChange={handleChange}
-              className="border px-4 py-2 rounded w-full text-black"
-            />
-          </div>
+          {/* Variety with Suggestions */}
+          <div className="relative">
+  <label className="block font-medium mb-2">Variety</label>
+  <input
+    type="text"
+    name="variety"
+    value={formData.variety}
+    onChange={(e) => {
+      handleChange(e);
+      setShowVarietySuggestions(true);
+      setVarietySuggestionIndex(-1);
+    }}
+    onKeyDown={(e) => {
+      const filtered = varietySuggestions.filter((sugg) =>
+        sugg.toLowerCase().includes(formData.variety.toLowerCase())
+      );
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setVarietySuggestionIndex((prev) =>
+          prev < filtered.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setVarietySuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+      } else if (e.key === "Enter") {
+        if (varietySuggestionIndex >= 0 && varietySuggestionIndex < filtered.length) {
+          e.preventDefault();
+          setFormData({ ...formData, variety: filtered[varietySuggestionIndex] });
+          setVarietySuggestionIndex(-1);
+          setShowVarietySuggestions(false);
+        }
+      }
+    }}
+    className="border px-4 py-2 rounded w-full text-black"
+  />
+  {formData.variety && showVarietySuggestions && varietySuggestions && varietySuggestions.length > 0 && (
+    <ul className="absolute z-50 border border-gray-300 bg-white mt-1 max-h-40 overflow-y-auto text-black w-full">
+      {varietySuggestions
+        .filter((sugg) =>
+          sugg.toLowerCase().includes(formData.variety.toLowerCase())
+        )
+        .map((sugg, index) => (
+          <li
+            key={index}
+            onClick={() => {
+              setFormData({ ...formData, variety: sugg });
+              setVarietySuggestionIndex(-1);
+              setShowVarietySuggestions(false);
+            }}
+            className={`px-4 py-2 cursor-pointer hover:bg-gray-200 ${
+              varietySuggestionIndex === index ? "bg-gray-300" : ""
+            }`}
+          >
+            {sugg}
+          </li>
+        ))}
+    </ul>
+  )}
+</div>
+
           
           {/* Area */}
           <div>
