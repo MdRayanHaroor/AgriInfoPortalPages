@@ -62,6 +62,7 @@ export default function Crops() {
                     className="border px-4 py-2 rounded w-full max-w-md text-black"
                 />
             </div>
+           
 
             {loading ? (
                 <div className="flex justify-center items-center h-64">
