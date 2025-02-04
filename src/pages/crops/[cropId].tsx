@@ -367,7 +367,7 @@ export default function CropDetailPage() {
         >
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-semibold">{input.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-200">{input.name}</h3>
               <p className="text-sm text-gray-300">
                 📧 {input.email}
               </p>
