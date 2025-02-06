@@ -29,7 +29,7 @@ export default function MyCrops() {
           throw new Error("Failed to fetch your input data: " + text);
         }
         const data = await response.json();
-        // (Client-side filtering is not strictly necessary if the API returns only matching documents.)
+        // Extra client-side filtering (in case the API returns more than expected)
         const myData = data.filter(
           (item) => item.email === email && item.phone === phone
         );
@@ -53,7 +53,7 @@ export default function MyCrops() {
   const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
-  // Reset pagination when userInputs changes
+  // Reset pagination when userInputs change
   useEffect(() => {
     setCurrentPage(1);
   }, [userInputs]);
@@ -159,8 +159,9 @@ export default function MyCrops() {
 
 // MyCropCard Component: Renders each submission with editing, deletion, and bidding functionality.
 function MyCropCard({ input, refreshData }) {
+  // Correctly destructure bidStarted along with its setter.
+  //const [bidStarted, setBidStarted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [setBidStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [formData, setFormData] = useState({ ...input });
   const [editError, setEditError] = useState("");
@@ -228,7 +229,7 @@ function MyCropCard({ input, refreshData }) {
       return;
     }
     const [year, month] = formData.harvestingMonth.split("-");
-    // Calculate the last day of the month (by setting day to 0 of next month)
+    // Calculate the last day of the month by setting day to 0 of next month.
     const endDate = new Date(Number(year), Number(month), 0);
     const now = new Date();
     const diffMs = endDate.getTime() - now.getTime();
@@ -236,7 +237,7 @@ function MyCropCard({ input, refreshData }) {
       alert("Harvesting month is over. Cannot start bidding.");
       return;
     }
-    setBidStarted(true);
+    //setBidStarted(true);
     setShowBids(true);
     const interval = setInterval(() => {
       const now = new Date();
@@ -252,9 +253,9 @@ function MyCropCard({ input, refreshData }) {
     }, 1000);
   };
 
-  // Stop Bidding: Cancel bidding and hide bids.
+  // Stop Bidding: Cancel bidding.
   const handleStopBidding = () => {
-    setBidStarted(false);
+    //setBidStarted(false);
     setShowBids(false);
     setTimeLeft("");
   };
@@ -345,9 +346,7 @@ function MyCropCard({ input, refreshData }) {
                 {staticBids.map((bid, index) => (
                   <div
                     key={index}
-                    className={`p-2 border rounded bg-gray-800 ${
-                      index === 0 ? "bg-green-600" : ""
-                    }`}
+                    className={`p-2 border rounded bg-gray-800 ${index === 0 ? "bg-green-600" : ""}`}
                   >
                     <p className="text-sm">Trader: {bid.traderName}</p>
                     <p className="text-sm">Bid per acre: ₹{bid.bidPerAcre}</p>
