@@ -240,7 +240,7 @@ export default function StateDetailPage() {
   if (loading)
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-10 w-10 border-t-2 border-white rounded-full"></div>
+        <div className="animate-spin h-10 w-10 border-t-2 border-black dark:border-white rounded-full"></div>
       </div>
     );
   

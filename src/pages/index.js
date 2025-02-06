@@ -38,6 +38,12 @@ export default function Home() {
     {/* Main Buttons */}
     <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-6">
     <button
+    onClick={() => router.push("/my-crops")}
+    className="bg-blue-600 text-white px-6 py-3 rounded shadow-md hover:bg-blue-700 transition flex items-center gap-2"
+    >
+    My Crops
+    </button>
+    <button
     onClick={() => router.push("/states")}
     className="bg-blue-600 text-white px-6 py-3 rounded shadow-md hover:bg-blue-700 transition flex items-center gap-2"
     >
