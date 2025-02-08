@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { auth } from "../lib/firebase"; 
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 declare global {
   interface Window {
@@ -26,11 +27,18 @@ const Register = () => {
     type: "Individual",   // default
     password: "",
   });
-  
+
   const [otp, setOtp] = useState({ emailOtp: "", mobileOtp: "" });
-  const [otpSent, setOtpSent] = useState({ email: false, mobile: false });
-  const [step, setStep] = useState(1);
-  const [error, setError] = useState("");
+const [otpSent, setOtpSent] = useState({ email: false, mobile: false });
+const [step, setStep] = useState(1);
+const [error, setError] = useState("");
+  
+const [alertMessage, setAlertMessage] = useState("");
+const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
+const [sendingMobileOtp, setSendingMobileOtp] = useState(false);
+const [showPassword, setShowPassword] = useState(false);
+const [confirmPassword, setConfirmPassword] = useState("");
+
   
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -45,18 +53,20 @@ const Register = () => {
   // Send OTP for email verification (remains unchanged)
   const sendEmailOtp = async () => {
     try {
+      setSendingEmailOtp(true);
       const response = await fetch("/api/verify-email-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email }),
       });
-      
       if (!response.ok) throw new Error("Failed to send email OTP");
       setOtpSent({ ...otpSent, email: true });
     } catch {
       setError("Error sending email OTP.");
+    } finally {
+      setSendingEmailOtp(false);
     }
-  };
+  };  
   
   // Verify email OTP (remains unchanged)
   const verifyEmailOtp = async () => {
@@ -93,6 +103,7 @@ const Register = () => {
   // Send OTP for mobile verification using Firebase client SDK
   const sendMobileOtp = async () => {
     try {
+      setSendingMobileOtp(true);
       setupRecaptcha();
       const phoneNumber = `+91${formData.mobile}`;
       const confirmation = await signInWithPhoneNumber(
@@ -105,8 +116,11 @@ const Register = () => {
     } catch (error) {
       console.error("Error sending mobile OTP:", error);
       setError("Error sending mobile OTP.");
+    } finally {
+      setSendingMobileOtp(false);
     }
   };
+  
   
   // Verify mobile OTP using confirmationResult from Firebase client SDK
   const verifyMobileOtp = async () => {
@@ -123,22 +137,35 @@ const Register = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     try {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      
       if (!response.ok) throw new Error("Registration failed.");
-      router.push("/login"); // Redirect to login page after successful registration
+      setAlertMessage("Registration successful! Redirecting to login...");
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
     } catch {
       setError("Registration failed.");
     }
   };
   
+  
   return (
+    
     <div className="min-h-screen flex items-start justify-center p-4 pt-8">
+      {alertMessage && (
+  <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow">
+    {alertMessage}
+  </div>
+)}
     <div className="w-full max-w-lg bg-white rounded-lg shadow-lg p-8">
     <h1 className="text-3xl font-bold text-center mb-6 dark:text-black">Register</h1>
     {error && <p className="text-red-600 text-center mb-4">{error}</p>}
@@ -157,10 +184,18 @@ const Register = () => {
       {!otpSent.email ? (
         <button
         onClick={sendEmailOtp}
+        disabled={sendingEmailOtp}
         className="mt-4 w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
-        >
-        Send OTP
-        </button>
+      >
+        {sendingEmailOtp ? (
+          <>
+            <div className="animate-spin h-5 w-5 border-t-2 border-white rounded-full inline-block mr-2"></div>
+            Sending...
+          </>
+        ) : (
+          "Send OTP"
+        )}
+      </button>
       ) : (
         <>
         <input
@@ -203,10 +238,18 @@ const Register = () => {
       {!otpSent.mobile ? (
         <button
         onClick={sendMobileOtp}
+        disabled={sendingMobileOtp}
         className="mt-4 w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
-        >
-        Send OTP
-        </button>
+      >
+        {sendingMobileOtp ? (
+          <>
+            <div className="animate-spin h-5 w-5 border-t-2 border-white rounded-full inline-block mr-2"></div>
+            Sending...
+          </>
+        ) : (
+          "Send OTP"
+        )}
+      </button>
       ) : (
         <>
         <input
@@ -328,6 +371,17 @@ const Register = () => {
       />
       Farmer & Trader
       </label>
+      <label className="flex items-center text-gray-700">
+      <input
+        type="radio"
+        name="role"
+        value="Guest"
+        checked={formData.role === "Guest"}
+        onChange={handleChange}
+        required
+        className="mr-2"
+      /> Guest
+      </label>
       </div>
       </div>
       <div>
@@ -360,16 +414,36 @@ const Register = () => {
       </div>
       </div>
       <div>
-      <label className="block font-medium text-gray-700">Password*</label>
-      <input
-      type="password"
+  <label className="block font-medium text-gray-700">Password*</label>
+  <div className="relative">
+    <input
+      type={showPassword ? "text" : "password"}
       name="password"
       value={formData.password}
       onChange={handleChange}
-      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
       required
-      />
-      </div>
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute top-11 right-3 text-gray-600 hover:text-gray-900"
+    >
+      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    </button>
+  </div>
+</div>
+<div>
+  <label className="block font-medium text-gray-700">Confirm Password*</label>
+  <input
+    type="password"
+    name="confirmPassword"
+    value={confirmPassword}
+    onChange={(e) => setConfirmPassword(e.target.value)}
+    className="dark:text-black mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    required
+  />
+</div>
       <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
       Register
       </button>
