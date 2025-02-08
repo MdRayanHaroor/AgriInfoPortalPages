@@ -1,8 +1,9 @@
-const path = require('path');
-// Build an absolute path to .env.local which is 3 levels up from src/pages/api
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env.local') });
+import path from "path";
+import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 
-const bcrypt = require("bcryptjs");
+// Build an absolute path to .env.local which is 3 levels up from this file.
+dotenv.config({ path: path.resolve(__dirname, "../../../.env.local") });
 
 const password = process.env.ADMIN_KEY || "";
 

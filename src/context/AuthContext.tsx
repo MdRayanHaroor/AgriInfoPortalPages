@@ -48,36 +48,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
 
   // Fetch user data from backend
-  const fetchUserData = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+  // Fetch user data from backend and return the fetched user data.
+const fetchUserData = async (): Promise<User | null> => {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    setIsLoading(false);
+    return null;
+  }
 
-    try {
-      const response = await fetch("/api/user", {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch user data");
+  try {
+    const response = await fetch("/api/user", {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
       }
+    });
 
-      const { user: userData } = await response.json();
-      setUser(userData);
-      setAuthError(null);
-    } catch (error) {
-      console.error("Authentication error:", error);
-      setAuthError("Session expired. Please log in again.");
-      await logout();
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      throw new Error("Failed to fetch user data");
     }
-  };
+
+    const { user: userData } = await response.json();
+    setUser(userData);
+    setAuthError(null);
+    return userData;
+  } catch (error) {
+    console.error("Authentication error:", error);
+    setAuthError("Session expired. Please log in again.");
+    await logout();
+    return null;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Initial data fetch
   useEffect(() => {
@@ -90,9 +94,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Login function
   const login = async (token: string) => {
     localStorage.setItem("authToken", token);
-    await fetchUserData();
-    router.push("/");
-  };
+    const userData = await fetchUserData();
+    if (userData && userData.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/");
+    }
+  };  
 
   // Logout function
   const logout = async () => {
