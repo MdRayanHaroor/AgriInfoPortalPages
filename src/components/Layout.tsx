@@ -96,6 +96,11 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex gap-4 items-center">
+          {user && user.role === "admin" && (
+  <Link href="/admin" className="hover:underline">
+    Admin Dashboard
+  </Link>
+)}
             <Link href="/" className="hover:underline">
               Home
             </Link>
@@ -161,6 +166,11 @@ export default function Layout({ children }: LayoutProps) {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden flex flex-col gap-2 mt-4">
+            {user && user.role === "admin" && (
+  <Link href="/admin" className="hover:underline" onClick={() => setIsMenuOpen(false)}>
+    Admin Dashboard
+  </Link>
+)}
             <Link
               href="/"
               className="hover:underline"
