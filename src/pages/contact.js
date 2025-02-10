@@ -1,8 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function Contact() {
+  const { user } = useContext(AuthContext);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState("");
+
+  // When the user is available, pre-fill the name and email fields.
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+      }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -13,7 +26,8 @@ export default function Contact() {
     e.preventDefault();
     setStatus("Sending...");
     try {
-      const response = await fetch("/api/send-email", {
+      // This endpoint both sends the email and inserts the data into the contactForm collection.
+      const response = await fetch("/api/insert-contact-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, type: "contact" }),
@@ -21,7 +35,8 @@ export default function Contact() {
       const result = await response.json();
       if (response.ok) {
         setStatus("Message sent successfully!");
-        setFormData({ name: "", email: "", message: "" });
+        // Reset the message field only – keep name/email prefilled
+        setFormData((prev) => ({ ...prev, message: "" }));
       } else {
         setStatus(`Error: ${result.error}`);
       }
@@ -36,13 +51,11 @@ export default function Contact() {
       <div className="bg-gray-900 p-8 rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold mb-4 text-center">Contact Us</h1>
         <p className="mb-4 text-lg text-center">
-          Have questions, feedback, or suggestions? We&apos;d love to hear from
-          you! Fill out the form below, and we&apos;ll get back to you as soon as
-          possible.
+          Have questions, feedback, or suggestions? We&apos;d love to hear from you! Fill out the form below, and we&apos;ll get back to you as soon as possible.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-lg font-medium mb-2" htmlFor="name">
+            <label htmlFor="name" className="block text-lg font-medium mb-2">
               Name
             </label>
             <input
@@ -56,7 +69,7 @@ export default function Contact() {
             />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2" htmlFor="email">
+            <label htmlFor="email" className="block text-lg font-medium mb-2">
               Email
             </label>
             <input
@@ -70,7 +83,7 @@ export default function Contact() {
             />
           </div>
           <div>
-            <label className="block text-lg font-medium mb-2" htmlFor="message">
+            <label htmlFor="message" className="block text-lg font-medium mb-2">
               Message
             </label>
             <textarea
@@ -83,14 +96,10 @@ export default function Contact() {
               required
             />
           </div>
-
-          {/* Improved Button */}
           <button
             type="submit"
             className={`px-4 py-2 rounded transition flex items-center gap-2 ${
-              status === "Sending..."
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
+              status === "Sending..." ? "bg-gray-500 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
             }`}
             disabled={status === "Sending..."}
           >
@@ -104,8 +113,6 @@ export default function Contact() {
             )}
           </button>
         </form>
-
-        {/* Success / Error Message */}
         {status && (
           <p className={`mt-4 text-lg ${status.includes("Error") ? "text-red-500" : "text-green-500"}`}>
             {status}
