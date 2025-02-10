@@ -159,13 +159,13 @@ export default function MyCrops() {
 
 // MyCropCard Component: Renders each submission with editing, deletion, and bidding functionality.
 function MyCropCard({ input, refreshData }) {
-  // Correctly destructure bidStarted along with its setter.
-  //const [bidStarted, setBidStarted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
-  const [formData, setFormData] = useState({ ...input, minimumBid: input.minimumBid || 100 });
+  const [formData, setFormData] = useState({ ...input });
   const [editError, setEditError] = useState("");
   const [showBids, setShowBids] = useState(false);
+  // NEW: State to hold the minimum bid value entered by the farmer
+  const [minimumBid, setMinimumBid] = useState("");
 
   // Fields that are not editable.
   const nonEditableFields = ["name", "email", "phone", "_id", "createdAt"];
@@ -222,57 +222,54 @@ function MyCropCard({ input, refreshData }) {
     }
   };
 
-  // Start Bidding: Compute last day of harvesting month and start countdown timer.
-  // Replace your existing handleStartBidding function with this updated version:
+  // Start Bidding: Call API to create a bidding session.
   const handleStartBidding = async () => {
-       if (!formData.harvestingMonth || formData.harvestingMonth.trim() === "") {
-         alert("Harvesting month is not set.");
-         return;
-       }
-       const minimumBid = formData.minimumBid || 100; // Use default if not provided
-    
-       try {
-         const response = await fetch("/api/start-bidding", {
-           method: "POST",
-           headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({
-             inputId: input._id, // Send the crop input ID
-             minimumBid: minimumBid, // Send the minimum bid
-             harvestingMonth: formData.harvestingMonth, // Must be in format "YYYY-MM"
-           }),
-         });
-    
-         if (!response.ok) {
-           const errorData = await response.json();
-           throw new Error(errorData.error || "Failed to start bidding.");
-         }
-    
-         // Assume the API returns an object with biddingEndTime (ISO string)
-         const data = await response.json();
-         const endDate = new Date(data.biddingEndTime);
-         setShowBids(true);
-         const interval = setInterval(() => {
-           const now = new Date();
-           const diff = endDate.getTime() - now.getTime();
-           if (diff <= 0) {
-             clearInterval(interval);
-             setTimeLeft("Bidding ended");
-           } else {
-             const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
-             const hoursLeft = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-             const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-             setTimeLeft(`${daysLeft}d ${hoursLeft}h ${minutesLeft}m remaining`);
-           }
-         }, 1000);
-       } catch (error) {
-         alert(error instanceof Error ? error.message : "Failed to start bidding.");
-       }
-     };
-
+    if (!formData.harvestingMonth) {
+      alert("Harvesting month is not set.");
+      return;
+    }
+    if (!minimumBid) {
+      alert("Please enter a minimum bid.");
+      return;
+    }
+    try {
+      const response = await fetch("/api/start-bidding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inputId: input._id, // using the crop input _id
+          minimumBid: Number(minimumBid),
+          harvestingMonth: formData.harvestingMonth,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to start bidding.");
+      }
+      const data = await response.json();
+      // Expecting biddingEndTime from API response
+      const endDate = new Date(data.biddingEndTime);
+      setShowBids(true);
+      const interval = setInterval(() => {
+        const now = new Date();
+        const diff = endDate.getTime() - now.getTime();
+        if (diff <= 0) {
+          clearInterval(interval);
+          setTimeLeft("Bidding ended");
+        } else {
+          const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hoursLeft = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeLeft(`${daysLeft}d ${hoursLeft}h ${minutesLeft}m remaining`);
+        }
+      }, 60000);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to start bidding.");
+    }
+  };
 
   // Stop Bidding: Cancel bidding.
   const handleStopBidding = () => {
-    //setBidStarted(false);
     setShowBids(false);
     setTimeLeft("");
   };
@@ -340,20 +337,33 @@ function MyCropCard({ input, refreshData }) {
             >
               Delete
             </button>
-            {!showBids ? (
-              <button
-                onClick={handleStartBidding}
-                className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700 transition-colors"
-              >
-                Start Bidding
-              </button>
-            ) : (
-              <button
-                onClick={handleStopBidding}
-                className="bg-yellow-600 px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
-              >
-                Stop Bidding
-              </button>
+            {/* Only allow bidding if the farmer is logged in */}
+            {user && user.role === "Farmer" && (
+              !showBids ? (
+                <div className="flex flex-col">
+                  {/* Input for minimum bid */}
+                  <input
+                    type="number"
+                    value={minimumBid}
+                    onChange={(e) => setMinimumBid(e.target.value)}
+                    placeholder="Minimum bid"
+                    className="p-2 rounded text-black mb-2 w-40"
+                  />
+                  <button
+                    onClick={handleStartBidding}
+                    className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                  >
+                    Start Bidding
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleStopBidding}
+                  className="bg-yellow-600 px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
+                >
+                  Stop Bidding
+                </button>
+              )
             )}
           </div>
           {showBids && (

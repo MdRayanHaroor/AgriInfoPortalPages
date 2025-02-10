@@ -34,6 +34,20 @@ export default function Home() {
       <main className="p-6 max-w-6xl mx-auto">
         {/* Main Navigation Buttons */}
         <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-6">
+        
+        <button
+            onClick={() => router.push("/bids")}
+            className="bg-green-600 text-white px-6 py-3 rounded shadow-md hover:bg-green-700 transition flex items-center gap-2"
+          >
+            Ongoing Bids
+          </button>
+        
+        <button
+            onClick={() => router.push("/user-input")}
+            className="bg-green-600 text-white px-6 py-3 rounded shadow-md hover:bg-green-700 transition flex items-center gap-2"
+          >
+            Add Crop
+          </button>
           <button
             onClick={() => router.push("/my-crops")}
             className="bg-blue-600 text-white px-6 py-3 rounded shadow-md hover:bg-blue-700 transition flex items-center gap-2"
@@ -50,14 +64,9 @@ export default function Home() {
             onClick={() => router.push("/crops")}
             className="bg-blue-600 text-white px-6 py-3 rounded shadow-md hover:bg-blue-700 transition flex items-center gap-2"
           >
-            View Crops
+            View All Crops
           </button>
-          <button
-            onClick={() => router.push("/user-input")}
-            className="bg-green-600 text-white px-6 py-3 rounded shadow-md hover:bg-green-700 transition flex items-center gap-2"
-          >
-            Input Data
-          </button>
+          
           {user && user.role === "admin" && (
             <button
               onClick={() => router.push("/admin")}
