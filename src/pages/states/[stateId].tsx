@@ -220,36 +220,30 @@ useEffect(() => {
   fetchStateData();
 }, [router.query.stateId, selectedDistrict, selectedCropYear, selectedCrop, getMappedDistrict]);
 
-// useMemo to filter and sort agriculture data
+// Get the latest two years from the available data
+const latestYears = useMemo(() => {
+  const allYears = allStateData.map(record => record.crop_year);
+  const uniqueYears = Array.from(new Set(allYears)).sort((a, b) => b - a); // Sort descending
+  return uniqueYears.slice(0, 2); // Keep only the latest two years
+}, [allStateData]);
+
+// Filter agriculture data to only include the latest two years
 const displayedData = useMemo(() => {
   const filtered = allStateData.filter(record => {
     const mappedDistrict = getMappedDistrict(selectedDistrict);
     const matchesDistrict = selectedDistrict 
-    ? record.district_name === mappedDistrict.toUpperCase()
-    : true;
-    const matchesYear = selectedCropYear
-    ? record.crop_year.toString() === selectedCropYear
-    : true;
+      ? record.district_name === mappedDistrict.toUpperCase()
+      : true;
+    const matchesYear = latestYears.includes(record.crop_year); // Filter only latest 2 years
     const matchesCrop = selectedCrop
-    ? record.crop.toLowerCase() === selectedCrop.toLowerCase()
-    : true;
+      ? record.crop.toLowerCase() === selectedCrop.toLowerCase()
+      : true;
     return matchesDistrict && matchesYear && matchesCrop;
   });
-  
-  const sorted = [...filtered];
-  if (!selectedDistrict && !selectedCropYear) {
-    sorted.sort((a, b) => {
-      const districtCompare = a.district_name.localeCompare(b.district_name);
-      return districtCompare !== 0 ? districtCompare : b.crop_year - a.crop_year;
-    });
-  } else if (!selectedDistrict) {
-    sorted.sort((a, b) => a.district_name.localeCompare(b.district_name));
-  } else if (!selectedCropYear) {
-    sorted.sort((a, b) => b.crop_year - a.crop_year);
-  }
-  
+
+  const sorted = [...filtered].sort((a, b) => b.crop_year - a.crop_year);
   return sorted;
-}, [allStateData, selectedDistrict, selectedCropYear, selectedCrop, getMappedDistrict]);
+}, [allStateData, selectedDistrict, selectedCrop, latestYears, getMappedDistrict]);
 
 // Compute pagination values
 const totalPages = Math.ceil(displayedData.length / rowsPerPage);

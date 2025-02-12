@@ -1,3 +1,4 @@
+//src/pages/bids/[bidId].js
 import { useRouter } from "next/router";
 import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
