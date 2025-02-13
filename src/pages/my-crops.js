@@ -11,6 +11,7 @@ export default function MyCrops() {
   // Pagination state: 10 items per page
   const rowsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  
 
   // Fetch only the current user's inputs using both email and phone as query parameters.
   useEffect(() => {
@@ -94,6 +95,8 @@ export default function MyCrops() {
           <div className="grid grid-cols-1 gap-4">
             {paginatedData.map((input) => (
               <MyCropCard
+
+              
                 key={input._id}
                 input={input}
                 refreshData={async () => {
@@ -159,23 +162,58 @@ export default function MyCrops() {
 
 // MyCropCard Component: Renders each submission with editing, deletion, and bidding functionality.
 function MyCropCard({ input, refreshData }) {
-  // Correctly destructure bidStarted along with its setter.
-  //const [bidStarted, setBidStarted] = useState(false);
+  const { user } = useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [formData, setFormData] = useState({ ...input, minimumBid: input.minimumBid || 100 });
   const [editError, setEditError] = useState("");
   const [showBids, setShowBids] = useState(false);
+  const [activeBidTab, setActiveBidTab] = useState("existing"); // "existing" or "my"
+  const [minimumBid, setMinimumBid] = useState("");
+  const [biddingSession, setBiddingSession] = useState(null);
+  const [bidStatus, setBidStatus] = useState("");
+  //const [newBid, setNewBid] = useState("");
+  const [editingBidId, setEditingBidId] = useState(null);
+  const [editBidAmount, setEditBidAmount] = useState("");
 
-  // Fields that are not editable.
   const nonEditableFields = ["name", "email", "phone", "_id", "createdAt"];
 
-  // Static trader bids sorted descending by bidPerAcre.
-  const staticBids = [
-    { traderName: "Trader One", bidPerAcre: 200 },
-    { traderName: "Trader Two", bidPerAcre: 220 },
-    { traderName: "Trader Three", bidPerAcre: 210 },
-  ].sort((a, b) => b.bidPerAcre - a.bidPerAcre);
+    // Check if a bidding session already exists for this crop input.
+    useEffect(() => {
+      const fetchBiddingSession = async () => {
+        try {
+          const res = await fetch(`/api/get-bidding-session?inputId=${input._id}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === "ongoing") {
+              setBiddingSession(data);
+              setShowBids(true);
+              // Start the timer using the biddingEndTime from the session.
+              const endDate = new Date(data.biddingEndTime);
+              const updateTimer = () => {
+                const now = new Date();
+                const diff = endDate.getTime() - now.getTime();
+                if (diff <= 0) {
+                  setTimeLeft("Bidding ended");
+                } else {
+                  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                  setTimeLeft(`${days}d ${hours}h ${minutes}m remaining`);
+                }
+              };
+              updateTimer();
+              const interval = setInterval(updateTimer, 1000);
+              return () => clearInterval(interval);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching bidding session:", error);
+        }
+      };
+      fetchBiddingSession();
+    }, [input._id]);
+  
 
   // Handle input changes for editable fields.
   const handleInputChange = (e) => {
@@ -183,7 +221,7 @@ function MyCropCard({ input, refreshData }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle Save (update)
+  // Handle Save (update crop input).
   const handleSave = async () => {
     try {
       setEditError("");
@@ -222,60 +260,130 @@ function MyCropCard({ input, refreshData }) {
     }
   };
 
-  // Start Bidding: Compute last day of harvesting month and start countdown timer.
-  // Replace your existing handleStartBidding function with this updated version:
+  // Handle Start Bidding: Call /api/start-bidding and start timer.
   const handleStartBidding = async () => {
-       if (!formData.harvestingMonth || formData.harvestingMonth.trim() === "") {
-         alert("Harvesting month is not set.");
-         return;
-       }
-       const minimumBid = formData.minimumBid || 100; // Use default if not provided
-    
-       try {
-         const response = await fetch("/api/start-bidding", {
-           method: "POST",
-           headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({
-             inputId: input._id, // Send the crop input ID
-             minimumBid: minimumBid, // Send the minimum bid
-             harvestingMonth: formData.harvestingMonth, // Must be in format "YYYY-MM"
-           }),
-         });
-    
-         if (!response.ok) {
-           const errorData = await response.json();
-           throw new Error(errorData.error || "Failed to start bidding.");
-         }
-    
-         // Assume the API returns an object with biddingEndTime (ISO string)
-         const data = await response.json();
-         const endDate = new Date(data.biddingEndTime);
-         setShowBids(true);
-         const interval = setInterval(() => {
-           const now = new Date();
-           const diff = endDate.getTime() - now.getTime();
-           if (diff <= 0) {
-             clearInterval(interval);
-             setTimeLeft("Bidding ended");
-           } else {
-             const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
-             const hoursLeft = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-             const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-             setTimeLeft(`${daysLeft}d ${hoursLeft}h ${minutesLeft}m remaining`);
-           }
-         }, 1000);
-       } catch (error) {
-         alert(error instanceof Error ? error.message : "Failed to start bidding.");
-       }
-     };
+    if (!formData.harvestingMonth || formData.harvestingMonth.trim() === "") {
+      alert("Harvesting month is not set.");
+      return;
+    }
+    if (!minimumBid) {
+      alert("Please set a minimum bid.");
+      return;
+    }
+    try {
+      setBidStatus("Starting bidding session...");
+      const response = await fetch("/api/start-bidding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inputId: input._id, // Send the crop input ID
+          minimumBid: Number(minimumBid), // Send the minimum bid
+          harvestingMonth: formData.harvestingMonth, // Format "YYYY-MM"
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to start bidding.");
+      }
+      const data = await response.json();
+      // Assume the API returns { biddingId, biddingEndTime } (ISO string) and current bids.
+      setBiddingSession({
+        _id: data.biddingId,
+        endTime: data.biddingEndTime,
+        minimumBid: Number(minimumBid),
+        bids: data.bids || [],
+      });
+      setShowBids(true);
+      // Start the bidding timer.
+      const endDate = new Date(data.biddingEndTime);
+      const interval = setInterval(() => {
+        const now = new Date();
+        const diff = endDate.getTime() - now.getTime();
+        if (diff <= 0) {
+          clearInterval(interval);
+          setTimeLeft("Bidding ended");
+        } else {
+          const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hoursLeft = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeLeft(`${daysLeft}d ${hoursLeft}h ${minutesLeft}m remaining`);
+        }
+      }, 1000);
+      setBidStatus("Bidding session started.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to start bidding.");
+    }
+  };
 
-
-  // Stop Bidding: Cancel bidding.
+  // Handle Stop Bidding: Hide bidding section.
   const handleStopBidding = () => {
-    //setBidStarted(false);
     setShowBids(false);
     setTimeLeft("");
   };
+
+  // Handle bid submission for non-admin users.
+  // const handleBidSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     setBidStatus("Submitting bid...");
+  //     const res = await fetch("/api/submit-bid", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         biddingId: biddingSession?._id,
+  //         traderName: user ? user.name : "",
+  //         traderEmail: user ? user.email : "",
+  //         bidPerAcre: Number(newBid),
+  //       }),
+  //     });
+  //     if (!res.ok) {
+  //       const data = await res.json();
+  //       throw new Error(data.error || "Failed to submit bid");
+  //     }
+  //     setBidStatus("Bid submitted successfully!");
+  //     setNewBid("");
+  //     // Refresh bidding session details.
+  //     const res2 = await fetch(`/api/get-bid?bidId=${biddingSession?._id}`);
+  //     const updatedData = await res2.json();
+  //     setBiddingSession(updatedData);
+  //   } catch (err) {
+  //     setBidStatus(err instanceof Error ? err.message : "Error submitting bid");
+  //   }
+  // };
+
+  // Handle bid update in "My Bids" tab.
+  const handleBidUpdate = async (bidToUpdateId) => {
+    try {
+      setBidStatus("Updating bid...");
+      const res = await fetch("/api/update-bid", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          biddingId: biddingSession?._id,
+          bidId: bidToUpdateId,
+          bidPerAcre: Number(editBidAmount),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update bid");
+      }
+      setBidStatus("Bid updated successfully!");
+      setEditingBidId(null);
+      setEditBidAmount("");
+      // Refresh bidding session details.
+      const res2 = await fetch(`/api/get-bid?bidId=${biddingSession?._id}`);
+      const updatedData = await res2.json();
+      setBiddingSession(updatedData);
+    } catch (err) {
+      setBidStatus(err instanceof Error ? err.message : "Error updating bid");
+    }
+  };
+
+  // Extract "My Bids" from bidding session.
+  // const myBids = biddingSession?.bids
+  //   ? biddingSession.bids.filter((b) => b.traderEmail === user.email)
+  //   : [];
 
   return (
     <div className="border p-4 rounded-md bg-gray-800 text-white shadow-md">
@@ -327,26 +435,38 @@ function MyCropCard({ input, refreshData }) {
               day: "numeric",
             })}
           </p>
-          <div className="flex space-x-2 mt-4">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-            >
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors"
-            >
-              Delete
-            </button>
-            {!showBids ? (
+          <div className="flex flex-col gap-2 mt-4">
+            <div className="flex space-x-2">
               <button
-                onClick={handleStartBidding}
-                className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                onClick={() => setIsEditing(true)}
+                className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition-colors"
               >
-                Start Bidding
+                Edit
               </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+            {!showBids ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={minimumBid}
+                  onChange={(e) => setMinimumBid(e.target.value)}
+                  placeholder="Min Bid"
+                  className="border p-2 rounded w-24 dark:text-black"
+                  required
+                />
+                <button
+                  onClick={handleStartBidding}
+                  className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                >
+                  Start Bidding
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleStopBidding}
@@ -356,20 +476,106 @@ function MyCropCard({ input, refreshData }) {
               </button>
             )}
           </div>
-          {showBids && (
-            <div className="mt-4 p-2 bg-gray-700 rounded">
-              <p className="mb-2">Bidding Timer: {timeLeft}</p>
-              <div className="grid grid-cols-1 gap-2">
-                {staticBids.map((bid, index) => (
-                  <div
-                    key={index}
-                    className={`p-2 border rounded bg-gray-800 ${index === 0 ? "bg-green-600" : ""}`}
-                  >
-                    <p className="text-sm">Trader: {bid.traderName}</p>
-                    <p className="text-sm">Bid per acre: ₹{bid.bidPerAcre}</p>
-                  </div>
-                ))}
+          {showBids && biddingSession && (
+            <div className="mt-4">
+              <p className="mb-2 bg-gray-700 px-2 py-1 rounded inline-block">
+                Bidding Timer: {timeLeft}
+              </p>
+              {/* Bidding Tabs */}
+              <div className="mb-4 flex border-b">
+                <button
+                  onClick={() => setActiveBidTab("existing")}
+                  className={`px-4 py-2 ${
+                    activeBidTab === "existing"
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-gray-600"
+                  }`}
+                >
+                  Existing Bids
+                </button>
+                <button
+                  onClick={() => setActiveBidTab("my")}
+                  className={`px-4 py-2 ${
+                    activeBidTab === "my"
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-gray-600"
+                  }`}
+                >
+                  My Bids
+                </button>
               </div>
+              {activeBidTab === "existing" ? (
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">All Bids</h2>
+                  {biddingSession.bids && biddingSession.bids.length > 0 ? (
+                    <ul>
+                      {biddingSession.bids
+                        .sort((a, b) => b.bidPerAcre - a.bidPerAcre)
+                        .map((bidItem, index) => (
+                          <li key={index} className={index === 0 ? "bg-green-600 p-2" : "p-2"}>
+                            Trader: {bidItem.traderName}, Bid: ₹{bidItem.bidPerAcre} per acre
+                          </li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <p>No bids yet.</p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">My Bids</h2>
+                  {biddingSession.bids && biddingSession.bids.some((b) => b.traderEmail === user.email) ? (
+                    <ul>
+                      {biddingSession.bids
+                        .filter((b) => b.traderEmail === user.email)
+                        .map((bidItem, i) => (
+                          <li key={i} className="p-2 border rounded mb-2">
+                            {editingBidId === bidItem._id ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  value={editBidAmount}
+                                  onChange={(e) => setEditBidAmount(e.target.value)}
+                                  className="border p-1 rounded w-24 dark:text-black"
+                                />
+                                <button
+                                  onClick={() => handleBidUpdate(bidItem._id)}
+                                  className="bg-blue-600 text-white px-3 py-1 rounded"
+                                >
+                                  Update
+                                </button>
+                                <button
+                                  onClick={() => setEditingBidId(null)}
+                                  className="bg-gray-600 text-white px-3 py-1 rounded"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-center">
+                                <span>
+                                  Bid: ₹{bidItem.bidPerAcre} per acre (Trader: {bidItem.traderName})
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setEditingBidId(bidItem._id);
+                                    setEditBidAmount(bidItem.bidPerAcre.toString());
+                                  }}
+                                  className="bg-blue-600 text-white px-3 py-1 rounded"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <p>No bids submitted by you.</p>
+                  )}
+                  {bidStatus && <p className="mt-2">{bidStatus}</p>}
+                </div>
+              )}
             </div>
           )}
         </>
