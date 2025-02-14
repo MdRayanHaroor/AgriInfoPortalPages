@@ -1,4 +1,3 @@
-//src/pages/bids/[bidId].js
 import { useRouter } from "next/router";
 import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
@@ -14,15 +13,12 @@ export default function BidDetailPage() {
   const [newBid, setNewBid] = useState("");
   const [bidStatus, setBidStatus] = useState("");
   const [timeLeft, setTimeLeft] = useState("");
-  const [activeBidTab, setActiveBidTab] = useState("existing"); // "existing" or "my"
+  const [activeBidTab, setActiveBidTab] = useState("existing");
   const [editingBidId, setEditingBidId] = useState(null);
   const [editBidAmount, setEditBidAmount] = useState("");
-  
 
-  // Determine if the logged-in user is an admin.
   const isAdmin = user?.role === "admin";
 
-  // Fetch bid details based on the bidId from the URL.
   useEffect(() => {
     if (!bidId) return;
     const fetchBid = async () => {
@@ -43,7 +39,6 @@ export default function BidDetailPage() {
     fetchBid();
   }, [bidId]);
 
-  // Calculate and update the time remaining.
   useEffect(() => {
     if (!bid) return;
     const calculateTimeLeft = () => {
@@ -59,72 +54,56 @@ export default function BidDetailPage() {
     setTimeLeft(calculateTimeLeft());
     const interval = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 60000); // Update every minute
+    }, 60000);
     return () => clearInterval(interval);
   }, [bid]);
 
-  const handleBidUpdate = async (oldBidPerAcre) => {
-    if (!editBidAmount || Number(editBidAmount) <= 0) {
-        setBidStatus("Invalid bid amount");
-        return;
+  const validateBidAmount = (amount) => {
+    const bidNumber = Number(amount);
+    if (!amount || isNaN(bidNumber)) {
+      return "Please enter a valid bid amount";
     }
-
-    try {
-        setBidStatus("Updating bid...");
-
-        const res = await fetch("/api/update-bid", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                biddingId: bidId, // The ID of the bidding session
-                traderEmail: user.email, // Identify trader
-                oldBidPerAcre: Number(oldBidPerAcre), // Old bid to find & replace
-                bidPerAcre: Number(editBidAmount), // New bid amount
-            }),
-        });
-
-        const data = await res.json(); // Get API response
-        if (!res.ok) {
-            console.error("API Error:", data);
-            throw new Error(data.error || "Failed to update bid");
-        }
-
-        setBidStatus("Bid updated successfully!");
-        setEditingBidId(null);
-        setEditBidAmount("");
-
-        // Refresh bid details after updating
-        const res2 = await fetch(`/api/get-bid?bidId=${bidId}`);
-        const updatedData = await res2.json();
-        setBid(updatedData);
-    } catch (err) {
-        setBidStatus(err instanceof Error ? err.message : "Error updating bid");
+    if (bidNumber < Number(bid.minimumBid)) {
+      return `Bid must be at least ₹${bid.minimumBid} per acre`;
     }
-};
+    if (bid.bids && bid.bids.length > 0) {
+      const highestBid = Math.max(...bid.bids.map((b) => Number(b.bidPerAcre)));
+      if (bidNumber < highestBid) {
+        return `Bid must be higher than the current highest bid of ₹${highestBid} per acre`;
+      }
+    }
+    return null;
+  };
 
-
-  // Handle bid submission by the trader (only for non-admin users).
   const handleBidSubmit = async (e) => {
     e.preventDefault();
+    const validationError = validateBidAmount(newBid);
+    if (validationError) {
+      setBidStatus(validationError);
+      return;
+    }
+
     try {
       setBidStatus("Submitting bid...");
       const res = await fetch("/api/submit-bid", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          biddingId: bidId, // Using biddingId instead of bidId.
-          traderName: user ? user.name : "",
-          traderEmail: user ? user.email : "",
+          biddingId: bidId,
+          traderName: user?.name || "",
+          traderEmail: user?.email || "",
           bidPerAcre: Number(newBid),
         }),
       });
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to submit bid");
       }
+
       setBidStatus("Bid submitted successfully!");
       setNewBid("");
-      // Refresh bid details after submitting a bid.
+      
       const res2 = await fetch(`/api/get-bid?bidId=${bidId}`);
       const updatedData = await res2.json();
       setBid(updatedData);
@@ -133,8 +112,51 @@ export default function BidDetailPage() {
     }
   };
 
-  if (loading)
-    return <div className="p-6 text-center">Loading bid details...</div>;
+  const handleBidUpdate = async (bidToUpdateId) => {
+    const validationError = validateBidAmount(editBidAmount);
+    if (validationError) {
+      setBidStatus(validationError);
+      return;
+    }
+
+    try {
+      setBidStatus("Updating bid...");
+      const currentBid = bid.bids.find(b => b._id === bidToUpdateId);
+      
+      if (!currentBid) {
+        throw new Error("Original bid not found");
+      }
+
+      const res = await fetch("/api/update-bid", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          biddingId: bidId,
+          bidId: bidToUpdateId,
+          traderEmail: user.email,
+          oldBidPerAcre: currentBid.bidPerAcre,
+          bidPerAcre: Number(editBidAmount),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update bid");
+      }
+
+      setBidStatus("Bid updated successfully!");
+      setEditingBidId(null);
+      setEditBidAmount("");
+
+      const res2 = await fetch(`/api/get-bid?bidId=${bidId}`);
+      const updatedData = await res2.json();
+      setBid(updatedData);
+    } catch (err) {
+      setBidStatus(err instanceof Error ? err.message : "Error updating bid");
+    }
+  };
+
+  if (loading) return <div className="p-6 text-center">Loading bid details...</div>;
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!bid) return <div className="p-6 text-center">No bid found</div>;
 
@@ -162,8 +184,7 @@ export default function BidDetailPage() {
           <strong>Time Remaining:</strong> {timeLeft}
         </p>
       </div>
-  
-      {/* Show the bid submission form only for non-admin users */}
+
       {!isAdmin && (
         <div className="mb-4">
           <h2 className="text-xl font-semibold">Submit Your Bid</h2>
@@ -183,27 +204,37 @@ export default function BidDetailPage() {
               Submit Bid
             </button>
           </form>
-          {bidStatus && <p className="mt-2">{bidStatus}</p>}
+          {bidStatus && (
+            <p className={`mt-2 ${bidStatus.includes("success") ? "text-green-600" : "text-red-600"}`}>
+              {bidStatus}
+            </p>
+          )}
         </div>
       )}
-  
-      {/* Tabs for Existing Bids & My Bids */}
+
       <div className="mb-4 flex border-b">
         <button
-          className={`px-4 py-2 ${activeBidTab === "existing" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
           onClick={() => setActiveBidTab("existing")}
+          className={`px-4 py-2 ${
+            activeBidTab === "existing"
+              ? "border-b-2 border-blue-600 text-blue-600"
+              : "text-gray-600"
+          }`}
         >
           Existing Bids
         </button>
         <button
-          className={`px-4 py-2 ${activeBidTab === "my" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600"}`}
           onClick={() => setActiveBidTab("my")}
+          className={`px-4 py-2 ${
+            activeBidTab === "my"
+              ? "border-b-2 border-blue-600 text-blue-600"
+              : "text-gray-600"
+          }`}
         >
           My Bids
         </button>
       </div>
-  
-      {/* Existing Bids Section */}
+
       {activeBidTab === "existing" ? (
         <div>
           <h2 className="text-xl font-semibold mb-2">All Bids</h2>
@@ -211,9 +242,12 @@ export default function BidDetailPage() {
             <ul>
               {bid.bids
                 .sort((a, b) => b.bidPerAcre - a.bidPerAcre)
-                .map((b, i) => (
-                  <li key={i} className={i === 0 ? "bg-green-600 p-2" : "p-2"}>
-                    Trader: {b.traderName}, Bid: ₹{b.bidPerAcre} per acre
+                .map((bidItem, index) => (
+                  <li 
+                    key={bidItem._id || index} 
+                    className={`${index === 0 ? "bg-green-600 text-white" : ""} p-2 rounded mb-1`}
+                  >
+                    Trader: {bidItem.traderName}, Bid: ₹{bidItem.bidPerAcre} per acre
                   </li>
                 ))}
             </ul>
@@ -222,63 +256,70 @@ export default function BidDetailPage() {
           )}
         </div>
       ) : (
-        /* My Bids Section */
         <div>
           <h2 className="text-xl font-semibold mb-2">My Bids</h2>
-          {bid.bids && bid.bids.some((b) => b.traderEmail === user.email) ? (
+          {bid.bids && bid.bids.some((b) => b.traderEmail === user?.email) ? (
             <ul>
               {bid.bids
-  .filter((b) => b.traderEmail === user.email)
-  .map((bidItem, i) => (
-    <li key={i} className="p-2 border rounded mb-2">
-      {editingBidId === bidItem.bidPerAcre ? (
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            value={editBidAmount}
-            onChange={(e) => setEditBidAmount(e.target.value)}
-            className="border p-1 rounded w-24 dark:text-black"
-          />
-          <button
-            onClick={() => handleBidUpdate(bidItem.bidPerAcre)}
-            className="bg-blue-600 text-white px-3 py-1 rounded"
-          >
-            Update
-          </button>
-          <button
-            onClick={() => setEditingBidId(null)}
-            className="bg-gray-600 text-white px-3 py-1 rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <div className="flex justify-between items-center">
-          <span>
-            Bid: ₹{bidItem.bidPerAcre} per acre (Trader: {bidItem.traderName})
-          </span>
-          <button
-            onClick={() => {
-              setEditingBidId(bidItem.bidPerAcre);
-              setEditBidAmount(bidItem.bidPerAcre.toString());
-            }}
-            className="bg-blue-600 text-white px-3 py-1 rounded"
-          >
-            Edit
-          </button>
-        </div>
-      )}
-    </li>
-  ))}
-
+                .filter((b) => b.traderEmail === user?.email)
+                .map((bidItem) => (
+                  <li key={bidItem._id} className="p-2 border rounded mb-2">
+                    {editingBidId === bidItem._id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={editBidAmount}
+                          onChange={(e) => setEditBidAmount(e.target.value)}
+                          className="border p-1 rounded w-24 dark:text-black"
+                        />
+                        <button
+                          onClick={() => handleBidUpdate(bidItem._id)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded"
+                        >
+                          Update
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingBidId(null);
+                            setEditBidAmount("");
+                            setBidStatus("");
+                          }}
+                          className="bg-gray-600 text-white px-3 py-1 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <span>
+                          Bid: ₹{bidItem.bidPerAcre} per acre
+                        </span>
+                        <button
+                          onClick={() => {
+                            setEditingBidId(bidItem._id);
+                            setEditBidAmount(bidItem.bidPerAcre.toString());
+                            setBidStatus("");
+                          }}
+                          className="bg-blue-600 text-white px-3 py-1 rounded"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                ))}
             </ul>
           ) : (
             <p>No bids submitted by you.</p>
           )}
-          {bidStatus && <p className="mt-2">{bidStatus}</p>}
+          {bidStatus && (
+            <p className={`mt-2 ${bidStatus.includes("success") ? "text-green-600" : "text-red-600"}`}>
+              {bidStatus}
+            </p>
+          )}
         </div>
       )}
-  
+
       <div className="mt-6 text-center">
         <Link href="/bids" className="text-blue-500 hover:underline">
           ← Back to Ongoing Bids
@@ -286,5 +327,4 @@ export default function BidDetailPage() {
       </div>
     </section>
   );
-  
 }
