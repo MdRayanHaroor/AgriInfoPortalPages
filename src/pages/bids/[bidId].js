@@ -221,7 +221,7 @@ export default function BidDetailPage() {
               : "text-gray-600"
           }`}
         >
-          Existing Bids
+          Current Bids
         </button>
         <button
           onClick={() => setActiveBidTab("my")}

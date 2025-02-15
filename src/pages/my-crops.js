@@ -171,8 +171,19 @@ function MyCropCard({ input, refreshData }) {
   const [editingBidId, setEditingBidId] = useState(null);
   const [editBidAmount, setEditBidAmount] = useState("");
   const [stopBiddingLoading, setStopBiddingLoading] = useState(false);
-
   const nonEditableFields = ["name", "email", "phone", "_id", "createdAt"];
+
+  const formatBiddingEndTime = (endTimeStr) => {
+    const endTime = new Date(endTimeStr);
+    return endTime.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   // Validate bid amount
   const validateBidAmount = (amount) => {
@@ -205,7 +216,7 @@ function MyCropCard({ input, refreshData }) {
 
             // Update timer
             const updateTimer = () => {
-              const endDate = new Date(data.biddingEndTime);
+              const endDate = new Date(data.endTime);
               const now = new Date();
               const diff = endDate.getTime() - now.getTime();
               
@@ -217,11 +228,12 @@ function MyCropCard({ input, refreshData }) {
               const days = Math.floor(diff / (1000 * 60 * 60 * 24));
               const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
               const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-              setTimeLeft(`${days}d ${hours}h ${minutes}m remaining`);
+              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+              setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
             };
 
             updateTimer();
-            const interval = setInterval(updateTimer, 60000);
+            const interval = setInterval(updateTimer, 1000);
             return () => clearInterval(interval);
           }
         }
@@ -438,6 +450,28 @@ function MyCropCard({ input, refreshData }) {
               day: "numeric",
             })}
           </p>
+
+          {/* Bidding Status Section */}
+          {showBids && biddingSession && (
+            <div className="mt-4 space-y-2">
+              <div className="flex flex-wrap gap-3 items-center bg-gray-700 p-2 rounded">
+                {biddingSession.minimumBid && (
+                  <p className="text-sm">
+                    <span className="text-gray-300">Min Bid:</span>{' '}
+                    <span className="font-semibold">₹{biddingSession.minimumBid}/acre</span>
+                  </p>
+                )}
+                <p className="text-sm">
+                  <span className="text-gray-300">Bidding ends at:</span>{' '}
+                  <span className="font-semibold">{formatBiddingEndTime(biddingSession.endTime)}</span>
+                </p>
+                <p className="text-sm font-medium text-blue-400">
+                  {timeLeft}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2 mt-4">
             <div className="flex space-x-2">
               <button
@@ -502,7 +536,7 @@ function MyCropCard({ input, refreshData }) {
                       : "text-gray-600"
                   }`}
                 >
-                  Existing Bids
+                  Current Bids
                 </button>
                 <button
                   onClick={() => setActiveBidTab("my")}
