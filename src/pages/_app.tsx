@@ -5,6 +5,7 @@ import Layout from "@/components/Layout";
 import { AuthProvider, AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useMemo } from "react";
+import { Analytics } from '@vercel/analytics/next';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const authContext = useContext(AuthContext);
@@ -40,6 +41,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthGuard>
         <Layout>
           <Component {...pageProps} />
+          <Analytics />
         </Layout>
       </AuthGuard>
     </AuthProvider>
