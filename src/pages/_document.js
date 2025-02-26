@@ -5,6 +5,9 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
+          {/* Google AdSense Verification Meta Tag */}
+          <meta name="google-adsense-account" content="ca-pub-8232236830358247" />
+          
           {/* Google Ads Script */}
           <script 
             async 
