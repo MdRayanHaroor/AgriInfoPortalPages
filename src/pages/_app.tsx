@@ -1,5 +1,7 @@
 // src/pages/_app.tsx
 import { AppProps } from "next/app";
+import Head from "next/head";
+import Script from "next/script";
 import "../styles/globals.css";
 import Layout from "@/components/Layout";
 import { AuthProvider, AuthContext } from "@/context/AuthContext";
@@ -14,7 +16,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
   
   const { user, isLoading } = authContext;
-  const publicRoutes = useMemo(() => ["/login", "/register",  "/forgot-password"], []);
+  const publicRoutes = useMemo(() => ["/login", "/register", "/forgot-password"], []);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,16 +36,30 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <AuthProvider>
-      <AuthGuard>
-        <Layout>
-          <Component {...pageProps} />
-          <Analytics />
-        </Layout>
-      </AuthGuard>
-    </AuthProvider>
+    <>
+      <Head>
+        {/* Google AdSense Verification Meta Tag */}
+        <meta name="google-adsense-account" content="ca-pub-8232236830358247" />
+      </Head>
+      
+      {/* Google AdSense Script */}
+      <Script
+        async
+        strategy="afterInteractive"
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8232236830358247"
+        crossOrigin="anonymous"
+      />
+
+      <AuthProvider>
+        <AuthGuard>
+          <Layout>
+            <Component {...pageProps} />
+            <Analytics />
+          </Layout>
+        </AuthGuard>
+      </AuthProvider>
+    </>
   );
 }
