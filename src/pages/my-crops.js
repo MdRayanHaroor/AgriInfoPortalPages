@@ -2,161 +2,22 @@ import { useContext, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { AuthContext } from "@/context/AuthContext";
 
-export default function MyCrops() {
-  const { user, isLoading: authLoading } = useContext(AuthContext) || {};
-  const [userInputs, setUserInputs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// Crop Icon Component
+const CropIcon = ({ cropType }) => {
+  const cropIcons = {
+    rice: "🌾",
+    wheat: "🌾",
+    maize: "🌽",
+    cotton: "🧶",
+    sugarcane: "🍬",
+    default: "🌱"
+  };
 
-  // Pagination state: 10 items per page
-  const rowsPerPage = 10;
-  const [currentPage, setCurrentPage] = useState(1);
+  const icon = cropIcons[cropType.toLowerCase()] || cropIcons.default;
+  return <span className="mr-2 text-xl">{icon}</span>;
+};
 
-  // Fetch only the current user's inputs using both email and phone as query parameters.
-  useEffect(() => {
-    if (!user) return;
-    const fetchUserInputs = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const email = user.email;
-        const phone = user.mobile;
-        const response = await fetch(
-          `/api/get-user-inputs?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`
-        );
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error("Failed to fetch your input data: " + text);
-        }
-        const data = await response.json();
-        // Extra client-side filtering (in case the API returns more than expected)
-        const myData = data.filter(
-          (item) => item.email === email && item.phone === phone
-        );
-        setUserInputs(myData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUserInputs();
-  }, [user]);
-
-  // Pagination calculations
-  const totalPages = useMemo(() => Math.ceil(userInputs.length / rowsPerPage), [userInputs]);
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return userInputs.slice(start, start + rowsPerPage);
-  }, [userInputs, currentPage]);
-
-  const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-
-  // Reset pagination when userInputs change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [userInputs]);
-
-  if (authLoading || loading) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto text-center">
-        <div className="animate-spin h-10 w-10 border-t-2 border-blue-500 rounded-full mx-auto"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto text-center">
-        <p>Please log in to view your crops.</p>
-        <Link href="/login" className="text-blue-500 hover:underline">
-          Log In
-        </Link>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto text-center text-red-500">
-        {error}
-      </div>
-    );
-  }
-
-  return (
-    <section className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center">My Crops</h1>
-      
-      {userInputs.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 gap-4">
-            {paginatedData.map((input) => (
-              <MyCropCard
-                key={input._id}
-                input={input}
-                refreshData={async () => {
-                  if (!user) return;
-                  try {
-                    setLoading(true);
-                    const email = user.email;
-                    const phone = user.mobile;
-                    const res = await fetch(
-                      `/api/get-user-inputs?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`
-                    );
-                    if (res.ok) {
-                      const data = await res.json();
-                      const myData = data.filter(
-                        (item) => item.email === email && item.phone === phone
-                      );
-                      setUserInputs(myData);
-                    }
-                  } catch (err) {
-                    console.error(err);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-              />
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-4 space-x-4">
-              <button
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="text-gray-400 text-center">No crops found for you.</p>
-      )}
-
-      <div className="mt-6 text-center">
-        <Link href="/crops" className="text-blue-500 hover:underline">
-          ← Back to All Crops
-        </Link>
-      </div>
-    </section>
-  );
-}
-
+// Crop Card Component
 function MyCropCard({ input, refreshData }) {
   const { user } = useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
@@ -173,17 +34,17 @@ function MyCropCard({ input, refreshData }) {
   const [stopBiddingLoading, setStopBiddingLoading] = useState(false);
   const nonEditableFields = ["name", "email", "phone", "_id", "createdAt"];
 
-  const formatBiddingEndTime = (endTimeStr) => {
-    const endTime = new Date(endTimeStr);
-    return endTime.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+  // const formatBiddingEndTime = (endTimeStr) => {
+  //   const endTime = new Date(endTimeStr);
+  //   return endTime.toLocaleString('en-US', {
+  //     year: 'numeric',
+  //     month: 'long',
+  //     day: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit',
+  //     hour12: true
+  //   });
+  // };
 
   // Validate bid amount
   const validateBidAmount = (amount) => {
@@ -401,9 +262,9 @@ function MyCropCard({ input, refreshData }) {
   };
 
   return (
-    <div className="border p-4 rounded-md bg-gray-800 text-white shadow-md">
+    <div className="bg-white shadow-md rounded-lg p-6 mb-4 border-l-4 border-green-500">
       {isEditing ? (
-        <div>
+        <div className="text-black">
           {Object.keys(formData).map((key) => {
             if (nonEditableFields.includes(key)) return null;
             return (
@@ -423,13 +284,13 @@ function MyCropCard({ input, refreshData }) {
           <div className="flex space-x-2">
             <button
               onClick={handleSave}
-              className="bg-green-600 px-4 py-2 rounded hover:bg-green-700 transition-colors"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
             >
               Save
             </button>
             <button
               onClick={() => setIsEditing(false)}
-              className="bg-gray-600 px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
             >
               Cancel
             </button>
@@ -437,52 +298,77 @@ function MyCropCard({ input, refreshData }) {
         </div>
       ) : (
         <>
-          <h3 className="text-lg font-semibold mb-1">{input.name}</h3>
-          <p className="text-sm text-gray-300">{input.email} | {input.phone}</p>
-          <p className="text-sm text-gray-300">📍 {input.district}, {input.village}</p>
-          <p className="text-sm text-gray-300">🌿 {input.fruitVegetable} ({input.variety})</p>
-          <p className="text-sm text-gray-300">📏 Area: {input.area} acres</p>
-          <p className="text-sm text-gray-300">📅 Sown: {input.sownMonth} | Harvest: {input.harvestingMonth}</p>
-          <p className="text-xs text-gray-400 mt-2">
-            Submitted on: {new Date(input.createdAt).toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
-          </p>
-
-          {/* Bidding Status Section */}
-          {showBids && biddingSession && (
-            <div className="mt-4 space-y-2">
-              <div className="flex flex-wrap gap-3 items-center bg-gray-700 p-2 rounded">
-                {biddingSession.minimumBid && (
-                  <p className="text-sm">
-                    <span className="text-gray-300">Min Bid:</span>{' '}
-                    <span className="font-semibold">₹{biddingSession.minimumBid}/acre</span>
-                  </p>
-                )}
-                <p className="text-sm">
-                  <span className="text-gray-300">Bidding ends at:</span>{' '}
-                  <span className="font-semibold">{formatBiddingEndTime(biddingSession.endTime)}</span>
-                </p>
-                <p className="text-sm font-medium text-blue-400">
-                  {timeLeft}
-                </p>
-              </div>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                <CropIcon cropType={input.fruitVegetable} />
+                {input.fruitVegetable} 
+                {input.variety && <span className="text-sm text-gray-500 ml-2">({input.variety})</span>}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {input.district}, {input.village}
+              </p>
             </div>
-          )}
+            <div className="text-right">
+              <span className="text-sm text-gray-500">
+                Submitted on: {new Date(input.createdAt).toLocaleString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-4 dark:text-gray-800">
+            <div>
+              <p className="text-sm">
+                <strong>Area:</strong> {input.area} acres
+              </p>
+              <p className="text-sm">
+                <strong>Sown:</strong> {input.sownMonth}
+              </p>
+              <p className="text-sm">
+                <strong>Expected Harvest:</strong> {input.harvestingMonth}
+              </p>
+            </div>
+            <div>
+              {showBids && biddingSession && (
+                <div className="bg-green-50 p-2 rounded">
+                  <p className="text-sm">
+                    <strong>Bidding Status:</strong>{' '}
+                    <span className={
+                      biddingSession.status === 'ongoing' 
+                        ? 'text-green-600' 
+                        : 'text-gray-600'
+                    }>
+                      {biddingSession.status === 'ongoing' ? 'Active' : 'Not Listed'}
+                    </span>
+                  </p>
+                  {biddingSession.status === 'ongoing' && (
+                    <p className="text-sm">
+                      <strong>Minimum Bid:</strong> ₹{biddingSession.minimumBid}/acre
+                    </p>
+                  )}
+                  <p className="text-sm font-medium text-blue-400">
+                    {timeLeft}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex flex-col gap-2 mt-4">
             <div className="flex space-x-2">
               <button
                 onClick={() => setIsEditing(true)}
-                className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
               >
                 Edit
               </button>
               <button
                 onClick={handleDelete}
-                className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
               >
                 Delete
               </button>
@@ -499,7 +385,7 @@ function MyCropCard({ input, refreshData }) {
                 />
                 <button
                   onClick={handleStartBidding}
-                  className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
                 >
                   Start Bidding
                 </button>
@@ -508,7 +394,7 @@ function MyCropCard({ input, refreshData }) {
               <button
                 onClick={handleStopBidding}
                 disabled={stopBiddingLoading}
-                className="bg-yellow-600 px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
+                className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition"
               >
                 {stopBiddingLoading ? (
                   <>
@@ -523,7 +409,7 @@ function MyCropCard({ input, refreshData }) {
           </div>
           {showBids && biddingSession && (
             <div className="mt-4">
-              <p className="mb-2 bg-gray-700 px-2 py-1 rounded inline-block">
+              <p className="mb-2 bg-gray-700 px-2 py-1 rounded inline-block text-white">
                 Bidding Timer: {timeLeft}
               </p>
               {/* Bidding Tabs */}
@@ -550,7 +436,7 @@ function MyCropCard({ input, refreshData }) {
                 </button>
               </div>
               {activeBidTab === "existing" ? (
-                <div>
+                <div className="dark:text-black">
                   <h2 className="text-xl font-semibold mb-2">All Bids</h2>
                   {biddingSession.bids && biddingSession.bids.length > 0 ? (
                     <ul>
@@ -570,7 +456,7 @@ function MyCropCard({ input, refreshData }) {
                   )}
                 </div>
               ) : (
-                <div>
+                <div className="dark:text-black">
                   <h2 className="text-xl font-semibold mb-2">My Bids</h2>
                   {biddingSession.bids && biddingSession.bids.some((b) => b.traderEmail === user?.email) ? (
                     <ul>
@@ -637,6 +523,279 @@ function MyCropCard({ input, refreshData }) {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+export default function MyCrops() {
+  const { user, isLoading: authLoading } = useContext(AuthContext) || {};
+  const [userInputs, setUserInputs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Pagination state: 10 items per page
+  const rowsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Fetch only the current user's inputs using both email and phone as query parameters.
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserInputs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const email = user.email;
+        const phone = user.mobile;
+        const response = await fetch(
+          `/api/get-user-inputs?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`
+        );
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error("Failed to fetch your input data: " + text);
+        }
+        const data = await response.json();
+        // Extra client-side filtering (in case the API returns more than expected)
+        const myData = data.filter(
+          (item) => item.email === email && item.phone === phone
+        );
+        setUserInputs(myData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserInputs();
+  }, [user]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => Math.ceil(userInputs.length / rowsPerPage), [userInputs]);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return userInputs.slice(start, start + rowsPerPage);
+  }, [userInputs, currentPage]);
+
+  const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+  // Reset pagination when userInputs change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [userInputs]);
+
+  // Agricultural Insights Component
+  const AgriculturalInsights = () => (
+    <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+      <h2 className="text-2xl font-bold text-green-700 mb-4">Agricultural Management Insights</h2>
+      <div className="grid md:grid-cols-3 gap-4">
+        <div>
+          <h3 className="font-semibold text-lg mb-2 dark:text-gray-800">Crop Tracking</h3>
+          <p className="text-gray-600 text-sm">
+            Effectively monitor your agricultural production from sowing to harvest. 
+            Keep detailed records of each crop&apos;s lifecycle and performance.
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold text-lg mb-2 dark:text-gray-800">Bidding Strategies</h3>
+          <p className="text-gray-600 text-sm">
+            Maximize your crop&apos;s market value through our integrated bidding platform. 
+            Get real-time market insights and competitive pricing.
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold text-lg mb-2 dark:text-gray-800">Data-Driven Decisions</h3>
+          <p className="text-gray-600 text-sm">
+            Leverage historical crop data and market trends to make informed 
+            agricultural decisions and improve your farming strategies.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Loading state
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-16 w-16 border-t-4 border-green-500 rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your crops...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in state
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Agricultural Crop Management</h1>
+          <p className="mb-4">
+            Track, manage, and optimize your agricultural production. 
+            Log in to access your personalized crop dashboard.
+          </p>
+          <Link 
+            href="/login" 
+            className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+          >
+            Log In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center bg-red-50 p-8 rounded-lg">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold text-green-600">My Crops</h1>
+            <Link 
+              href="/user-input" 
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+            >
+              Add New Crop
+            </Link>
+          </div>
+          <p className="text-gray-600">
+            Manage and track your agricultural inputs. View details, 
+            start bidding, or remove crop entries.
+          </p>
+        </div>
+
+        {/* Agricultural Insights */}
+        <AgriculturalInsights />
+
+        {/* Crops List */}
+        {userInputs.length > 0 ? (
+          <>
+            <div className="space-y-4">
+              {paginatedData.map((input) => (
+                <MyCropCard
+                  key={input._id}
+                  input={input}
+                  refreshData={async () => {
+                    if (!user) return;
+                    try {
+                      setLoading(true);
+                      const email = user.email;
+                      const phone = user.mobile;
+                      const res = await fetch(
+                        `/api/get-user-inputs?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`
+                      );
+                      if (res.ok) {
+                        const data = await res.json();
+                        const myData = data.filter(
+                          (item) => item.email === email && item.phone === phone
+                        );
+                        setUserInputs(myData);
+                      }
+                    } catch (err) {
+                      console.error(err);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center mt-8 space-x-4">
+                <button
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center bg-white p-8 rounded-lg shadow-md">
+            <p className="text-gray-600 mb-4">
+              You haven&apos;t added any crop entries yet.
+            </p>
+            <Link 
+              href="/user-input" 
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+            >
+              Add Your First Crop
+            </Link>
+          </div>
+        )}
+
+        {/* Additional Information */}
+        <div className="mt-8 bg-blue-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold text-blue-800 mb-4">
+            Why Track Your Crops?
+          </h2>
+          <ul className="space-y-3 text-blue-700 list-disc list-inside">
+            <li>Monitor your agricultural production</li>
+            <li>Access potential bidding opportunities</li>
+            <li>Keep a digital record of your crop history</li>
+            <li>Get personalized agricultural insights</li>
+            </ul>
+        </div>
+
+        {/* Descriptive Footer */}
+        <div className="mt-6 text-center bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold text-green-700 mb-4">
+            Your Agricultural Journey Starts Here
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Agri Info Portal is committed to empowering farmers and traders 
+            by providing a comprehensive platform for crop management, 
+            market insights, and agricultural networking.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link 
+              href="/crops" 
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+            >
+              Explore Crops
+            </Link>
+            <Link 
+              href="/bids" 
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+            >
+              View Ongoing Bids
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

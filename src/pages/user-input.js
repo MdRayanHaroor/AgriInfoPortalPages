@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext, useMemo } from "react";
+import Link from "next/link";
 import { AuthContext } from "@/context/AuthContext";
 
 export default function UserInput() {
@@ -53,7 +54,6 @@ export default function UserInput() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoadingStates(true);
         const response = await fetch(
           `https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=${process.env.NEXT_PUBLIC_DISTRICT_API_KEY}&offset=0&limit=all&format=json`
         );
@@ -110,7 +110,7 @@ export default function UserInput() {
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("User inputs:", data); // Log to check what data you receive
+          console.log("User inputs:", data);
           setUserInputs(data);
         }
       } catch (error) {
@@ -206,290 +206,350 @@ export default function UserInput() {
   };
   
   return (
-    <section className="p-6 max-w-4xl mx-auto">
-    <h1 className="text-3xl font-bold mb-4 text-center">User Input Form</h1>
-    
-    {loadingStates ? (
-      <p className="text-center text-gray-400">🔄 Loading...</p>
-    ) : (
-      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-800 p-6 rounded-lg shadow-lg text-white">
-      {/* Name */}
-      <div>
-      <label className="block font-medium mb-2">Name*</label>
-      <input
-      type="text"
-      name="name"
-      value={formData.name}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black focus:ring-2 focus:ring-blue-500"
-      />
-      </div>
-      
-      {/* Phone */}
-      <div>
-      <label className="block font-medium mb-2">Phone*</label>
-      <input
-      type="tel"
-      name="phone"
-      pattern="[0-9]{10}"
-      value={formData.phone}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      {/* Email */}
-      <div>
-      <label className="block font-medium mb-2">Email*</label>
-      <input
-      type="email"
-      name="email"
-      value={formData.email}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      />
-      </div>
-      
-      {/* State Dropdown */}
-      <div>
-      <label className="block font-medium mb-2">State*</label>
-      <select
-      name="state"
-      value={formData.state}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      >
-      <option value="">Select State</option>
-      {states.map((state, index) => (
-        <option key={index} value={state}>
-        {state}
-        </option>
-      ))}
-      </select>
-      </div>
-      
-      {/* District Dropdown */}
-      <div>
-      <label className="block font-medium mb-2">District*</label>
-      {loadingDistricts ? (
-        <p className="text-sm text-gray-400">🔄 Loading...</p>
-      ) : (
-        <select
-        name="district"
-        value={formData.district}
-        onChange={handleChange}
-        required
-        className="border px-4 py-2 rounded w-full text-black"
-        disabled={!formData.state}
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Navigation and Back Link */}
+        <div className="mb-6 text-sm">
+          <Link href="/" className="text-blue-600 hover:underline">
+            ⬅ Back to Home
+          </Link>
+        </div>
+
+        {/* Page Header */}
+        <div className="bg-white shadow-md rounded-lg p-8 mb-8">
+          <h1 className="text-3xl font-bold text-center mb-4 text-green-600">
+            Crop Information Submission
+          </h1>
+          <p className="text-gray-600 text-center max-w-2xl mx-auto">
+            Help us build a comprehensive agricultural database by sharing details 
+            about your crop. Your input supports farmers, researchers, and 
+            agricultural planners across India.
+          </p>
+        </div>
+
+        {/* Main Form Container */}
+        <form 
+          onSubmit={handleSubmit} 
+          className="bg-white shadow-md rounded-lg p-8 space-y-6"
         >
-        <option value="">Select District</option>
-        {districts.map((district, index) => (
-          <option key={index} value={district}>
-          {district}
-          </option>
-        ))}
-        </select>
-      )}
+          {/* Personal Information Section */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name*
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                placeholder="Enter your full name"
+              />
+            </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number*
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                pattern="[0-9]{10}"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                placeholder="10-digit mobile number"
+              />
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email Address*
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+              placeholder="Enter your email address"
+            />
+          </div>
+
+          {/* Location Information */}
+          <div className="grid md:grid-cols-3 gap-6">
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                State*
+              </label>
+              <select
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                disabled={loadingStates}
+              >
+                <option value="">
+                  {loadingStates ? "Loading states..." : "Select State"}
+                </option>
+                {states.map((state, index) => (
+                  <option key={index} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="district" className="block text-sm font-medium text-gray-700 mb-2">
+                District*
+              </label>
+              <select
+                id="district"
+                name="district"
+                value={formData.district}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                disabled={!formData.state || loadingDistricts}
+              >
+                <option value="">
+                  {loadingDistricts 
+                    ? "Loading districts..." 
+                    : !formData.state 
+                      ? "Select State First" 
+                      : "Select District"}
+                </option>
+                {districts.map((district, index) => (
+                  <option key={index} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="village" className="block text-sm font-medium text-gray-700 mb-2">
+                Village*
+              </label>
+              <input
+                type="text"
+                id="village"
+                name="village"
+                value={formData.village}
+                onChange={handleChange}
+                required
+                maxLength={maxVillageLength}
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                placeholder="Enter your village name"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.village.length}/{maxVillageLength} characters
+              </p>
+            </div>
+          </div>
+
+          {/* Crop Information */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="relative">
+              <label htmlFor="fruitVegetable" className="block text-sm font-medium text-gray-700 mb-2">
+                Crop Type*
+              </label>
+              <input
+                type="text"
+                id="fruitVegetable"
+                name="fruitVegetable"
+                value={formData.fruitVegetable}
+                onChange={(e) => {
+                  handleChange(e);
+                  setShowFruitSuggestions(true);
+                  setFruitSuggestionIndex(-1);
+                }}
+                required
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                placeholder="Enter crop type (e.g., Rice, Wheat)"
+              />
+              {formData.fruitVegetable && showFruitSuggestions && fruitSuggestions && fruitSuggestions.length > 0 && (
+                <ul className="absolute z-50 w-full bg-white border rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                  {fruitSuggestions
+                    .filter((sugg) =>
+                      sugg.toLowerCase().includes(formData.fruitVegetable.toLowerCase())
+                    )
+                    .map((sugg, index) => (
+                      <li
+                        key={index}
+                        onClick={() => {
+                          setFormData({ ...formData, fruitVegetable: sugg });
+                          setFruitSuggestionIndex(-1);
+                          setShowFruitSuggestions(false);
+                        }}
+                        className={`px-4 py-2 cursor-pointer hover:bg-green-100 ${
+                          fruitSuggestionIndex === index ?"bg-green-200" : ""
+                        }`}
+                      >
+                        {sugg}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="relative">
+              <label htmlFor="variety" className="block text-sm font-medium text-gray-700 mb-2">
+                Crop Variety 
+                <span className="text-gray-500 text-xs ml-2">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                id="variety"
+                name="variety"
+                value={formData.variety}
+                onChange={(e) => {
+                  handleChange(e);
+                  setShowVarietySuggestions(true);
+                  setVarietySuggestionIndex(-1);
+                }}
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                placeholder="Enter specific variety (if applicable)"
+              />
+              {formData.variety && showVarietySuggestions && varietySuggestions && varietySuggestions.length > 0 && (
+                <ul className="absolute z-50 w-full bg-white border rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                  {varietySuggestions
+                    .filter((sugg) =>
+                      sugg.toLowerCase().includes(formData.variety.toLowerCase())
+                    )
+                    .map((sugg, index) => (
+                      <li
+                        key={index}
+                        onClick={() => {
+                          setFormData({ ...formData, variety: sugg });
+                          setVarietySuggestionIndex(-1);
+                          setShowVarietySuggestions(false);
+                        }}
+                        className={`px-4 py-2 cursor-pointer hover:bg-green-100 ${
+                          varietySuggestionIndex === index ? "bg-green-200" : ""
+                        }`}
+                      >
+                        {sugg}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Crop Details */}
+          <div className="grid md:grid-cols-3 gap-6">
+            <div>
+              <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-2">
+                Cultivated Area (Acres)*
+              </label>
+              <input
+                type="number"
+                id="area"
+                name="area"
+                value={formData.area}
+                onChange={handleChange}
+                required
+                min="0.01"
+                step="0.01"
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+                placeholder="Enter area in acres"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="sownMonth" className="block text-sm font-medium text-gray-700 mb-2">
+                Sowing Month*
+              </label>
+              <input
+                type="month"
+                id="sownMonth"
+                name="sownMonth"
+                value={formData.sownMonth}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="harvestingMonth" className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Harvest Month*
+              </label>
+              <input
+                type="month"
+                id="harvestingMonth"
+                name="harvestingMonth"
+                value={formData.harvestingMonth}
+                onChange={handleChange}
+                required
+                min={formData.sownMonth || undefined}
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500 text-black"
+              />
+            </div>
+          </div>
+
+          {/* Submission Section */}
+          <div className="pt-6 border-t border-gray-200">
+            <button
+              type="submit"
+              className="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Submit Crop Information
+            </button>
+          </div>
+        </form>
+
+        {/* Status Message */}
+        {status && (
+          <div className={`mt-4 p-4 rounded text-center ${
+            status.includes("successfully") 
+              ? "bg-green-100 text-green-800" 
+              : status.includes("Error") 
+                ? "bg-red-100 text-red-800" 
+                : "bg-yellow-100 text-yellow-800"
+          }`}>
+            {status}
+          </div>
+        )}
+
+        {/* Additional Information Section */}
+        <div className="mt-8 bg-blue-50 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold text-blue-800 mb-4">
+            Why Submit Your Crop Information?
+          </h2>
+          <ul className="space-y-3 text-blue-700 list-disc list-inside">
+            <li>
+              Help create a comprehensive agricultural database
+            </li>
+            <li>
+              Receive personalized agricultural insights and recommendations
+            </li>
+            <li>
+              Contribute to research and policy-making in agriculture
+            </li>
+            <li>
+              Connect with potential buyers and traders
+            </li>
+          </ul>
+          <p className="mt-4 text-sm text-blue-600">
+            Note: Your information is confidential and will be used 
+            solely for agricultural research and market insights.
+          </p>
+        </div>
       </div>
-      
-      {/* Village Input with Character Counter */}
-      <div>
-      <label className="block font-medium mb-2">Village*</label>
-      <input
-      type="text"
-      name="village"
-      value={formData.village}
-      onChange={handleChange}
-      required
-      className="border px-4 py-2 rounded w-full text-black"
-      maxLength={maxVillageLength}
-      />
-      <p className="text-sm text-gray-400 mt-1">
-      {formData.village.length}/{maxVillageLength} characters
-      </p>
-      </div>
-      
-      {/* Fruit/Vegetable/Seed with Suggestions */}
-      <div className="relative">
-      <label className="block font-medium mb-2">Fruit/Vegetable/Seed*</label>
-      <input
-      type="text"
-      name="fruitVegetable"
-      value={formData.fruitVegetable}
-      onChange={(e) => {
-        handleChange(e);
-        setShowFruitSuggestions(true); // Ensure the suggestions are shown on input change
-        setFruitSuggestionIndex(-1);
-      }}
-      onKeyDown={(e) => {
-        const filtered = fruitSuggestions.filter((sugg) =>
-          sugg.toLowerCase().includes(formData.fruitVegetable.toLowerCase())
-      );
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setFruitSuggestionIndex((prev) =>
-          prev < filtered.length - 1 ? prev + 1 : prev
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setFruitSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === "Enter") {
-      if (fruitSuggestionIndex >= 0 && fruitSuggestionIndex < filtered.length) {
-        e.preventDefault();
-        setFormData({ ...formData, fruitVegetable: filtered[fruitSuggestionIndex] });
-        setFruitSuggestionIndex(-1);
-        setShowFruitSuggestions(false);
-      }
-    }
-  }}
-  required
-  className="border px-4 py-2 rounded w-full text-black"
-  />
-  {formData.fruitVegetable && showFruitSuggestions && fruitSuggestions && fruitSuggestions.length > 0 && (
-    <ul className="absolute z-50 border border-gray-300 bg-white mt-1 max-h-40 overflow-y-auto text-black w-full">
-    {fruitSuggestions
-      .filter((sugg) =>
-        sugg.toLowerCase().includes(formData.fruitVegetable.toLowerCase())
-    )
-    .map((sugg, index) => (
-      <li
-      key={index}
-      onClick={() => {
-        setFormData({ ...formData, fruitVegetable: sugg });
-        setFruitSuggestionIndex(-1);
-        setShowFruitSuggestions(false);
-      }}
-      className={`px-4 py-2 cursor-pointer hover:bg-gray-200 ${
-        fruitSuggestionIndex === index ? "bg-gray-300" : ""
-      }`}
-      >
-      {sugg}
-      </li>
-    ))}
-    </ul>
-  )}
-  </div>
-  
-  
-  {/* Variety with Suggestions */}
-  <div className="relative">
-  <label className="block font-medium mb-2">Variety</label>
-  <input
-  type="text"
-  name="variety"
-  value={formData.variety}
-  onChange={(e) => {
-    handleChange(e);
-    setShowVarietySuggestions(true);
-    setVarietySuggestionIndex(-1);
-  }}
-  onKeyDown={(e) => {
-    const filtered = varietySuggestions.filter((sugg) =>
-      sugg.toLowerCase().includes(formData.variety.toLowerCase())
+    </div>
   );
-  if (e.key === "ArrowDown") {
-    e.preventDefault();
-    setVarietySuggestionIndex((prev) =>
-      prev < filtered.length - 1 ? prev + 1 : prev
-  );
-} else if (e.key === "ArrowUp") {
-  e.preventDefault();
-  setVarietySuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
-} else if (e.key === "Enter") {
-  if (varietySuggestionIndex >= 0 && varietySuggestionIndex < filtered.length) {
-    e.preventDefault();
-    setFormData({ ...formData, variety: filtered[varietySuggestionIndex] });
-    setVarietySuggestionIndex(-1);
-    setShowVarietySuggestions(false);
-  }
-}
-}}
-className="border px-4 py-2 rounded w-full text-black"
-/>
-{formData.variety && showVarietySuggestions && varietySuggestions && varietySuggestions.length > 0 && (
-  <ul className="absolute z-50 border border-gray-300 bg-white mt-1 max-h-40 overflow-y-auto text-black w-full">
-  {varietySuggestions
-    .filter((sugg) =>
-      sugg.toLowerCase().includes(formData.variety.toLowerCase())
-  )
-  .map((sugg, index) => (
-    <li
-    key={index}
-    onClick={() => {
-      setFormData({ ...formData, variety: sugg });
-      setVarietySuggestionIndex(-1);
-      setShowVarietySuggestions(false);
-    }}
-    className={`px-4 py-2 cursor-pointer hover:bg-gray-200 ${
-      varietySuggestionIndex === index ? "bg-gray-300" : ""
-    }`}
-    >
-    {sugg}
-    </li>
-  ))}
-  </ul>
-)}
-</div>
-
-
-{/* Area */}
-<div>
-<label className="block font-medium mb-2">Area (in acres)*</label>
-<input
-type="number"
-name="area"
-value={formData.area}
-onChange={handleChange}
-required
-className="border px-4 py-2 rounded w-full text-black"
-/>
-</div>
-
-{/* Sown Month */}
-<div>
-<label className="block font-medium mb-2">Sown Month*</label>
-<input
-type="month"
-name="sownMonth"
-value={formData.sownMonth}
-onChange={handleChange}
-required
-className="border px-4 py-2 rounded w-full text-black"
-/>
-</div>
-
-{/* Harvesting Month */}
-<div>
-  <label className="block font-medium mb-2">Harvesting Month*</label>
-  <input
-    type="month"
-    name="harvestingMonth"
-    value={formData.harvestingMonth}
-    onChange={handleChange}
-    required
-    className="border px-4 py-2 rounded w-full text-black"
-    min={formData.sownMonth || undefined}  // Only allow harvesting month >= sownMonth
-  />
-</div>
-
-
-{/* Submit Button */}
-<div>
-<button
-type="submit"
-className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
->
-Submit
-</button>
-</div>
-</form>
-)}
-
-{status && <p className="mt-4 text-center text-lg">{status}</p>}
-</section>
-);
 }
