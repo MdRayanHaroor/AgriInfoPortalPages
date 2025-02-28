@@ -8,6 +8,12 @@ import { AuthProvider, AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useMemo } from "react";
 import { Analytics } from '@vercel/analytics/next';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'AgriInfo Portal - Agricultural Insights',
+  description: 'Comprehensive agricultural information platform for farmers and traders in India'
+};
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const authContext = useContext(AuthContext);
@@ -42,6 +48,12 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         {/* Google AdSense Verification Meta Tag */}
         <meta name="google-adsense-account" content="ca-pub-8232236830358247" />
+        <title>AgriInfo Portal - Agricultural Insights</title>
+        <meta 
+          name="description" 
+          content="Comprehensive agricultural information platform for farmers and traders in India" 
+        />
+        <link rel="icon" href="/logo_rr.png" />
       </Head>
       
       {/* Google AdSense Script */}
