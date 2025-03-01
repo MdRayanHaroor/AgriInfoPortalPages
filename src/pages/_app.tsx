@@ -30,14 +30,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // If no auth context, render loading or children based on route
   if (!authContext) {
-    return isPublicRoute ? <>{children}</> : <div>Loading...</div>;
+    return isPublicRoute ? <>{children}</> : <div className="animate-spin h-10 w-10 border-t-2 border-white rounded-full"></div>;
   }
 
   const { user, isLoading } = authContext;
 
   // Loading state
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="animate-spin h-10 w-10 border-t-2 border-white rounded-full"></div>;
   }
 
   // Allow access to public routes or authenticated user routes
